@@ -48,3 +48,12 @@ def ShortestAngleBetween(a, b):
 
 def Normalize(vector):
 	return Scale(vector, 1.0 / Magnitude(vector))
+	
+def Project(a, b):
+	ax, ay = a
+	bx, by = b
+	
+	x = ( (ax*bx + ay*by) / (bx*bx + by*by) ) * bx
+	y = ( (ax*bx + ay*by) / (bx*bx + by*by) ) * by
+	
+	return [x, y]
