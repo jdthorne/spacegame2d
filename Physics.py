@@ -5,9 +5,9 @@ import Vector
 class PhysicsBody:
 	def __init__(self, position):
 		self.position = position
-		self.velocity = [ 0, 0 ]
+		self.velocity = [ 1, 2 ]
 		
-		self.rotation = 0
+		self.rotation = 0.2
 		self.spin = 0
 		
 	# ============ FUNCTIONS YOU SHOULD REIMPLEMENT ==============

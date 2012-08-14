@@ -5,20 +5,12 @@ import math
 import Vector
 import Scalar
 
+import ShipDesign
 import ShipControls
 import Autopilot
 import Physics
 
-SHIP_DESIGN = """\
-       S
-      ^C^  
- ^    SSS    ^
- vVSSSSSSSSSVv
-      vSv
-       V 
-""".split("\n")
-
-MODULE_SIZE = 10
+MODULE_SIZE = 20
 
 class Module:
 	def __init__(self, parent, position, mass, color=None):
@@ -35,7 +27,7 @@ class Module:
 		
 		dc.SetPen(wx.Pen(wx.BLACK, 1))
 		dc.SetBrush(wx.Brush(self.color))
-		dc.DrawCircle(x, y, MODULE_SIZE/2)
+		dc.DrawCircle(x, 720-y, MODULE_SIZE/2)
 
 	def Simulate(self):
 		pass
@@ -88,7 +80,7 @@ class Engine(Module):
 			
 			dc.SetPen(wx.TRANSPARENT_PEN)
 			dc.SetBrush(wx.Brush(wx.Colour( int(255.0 * abs(visualPower)), int(128.0 * abs(visualPower)), 0 )))
-			dc.DrawCircle(x, y, 0.75 * MODULE_SIZE * abs(visualPower) * Vector.Magnitude(self.thrustVector))
+			dc.DrawCircle(x, 720-y, 0.75 * MODULE_SIZE * abs(visualPower) * Vector.Magnitude(self.thrustVector))
 
 		Module.Draw(self, dc)
 
@@ -99,46 +91,25 @@ class Ship(Physics.PhysicsBody):
 		self.scanner = scanner
 		self.powered = powered
 		
-		xInitial = 0
-		yInitial = 0
-		for line in SHIP_DESIGN:
-			if "C" in line:
-				xInitial = -line.index("C")
-				break
-			else:
-				yInitial -= 1
+		self.modules = []
 		
-		
-		engines = []
-		modules = []
-		y = yInitial
-		for line in SHIP_DESIGN:
-			x = xInitial
-			for char in line:
-				if char == "C":
-					modules.append( FlightComputer(self, [x, y]) )
-					
-				elif char == "S":
-					modules.append( Structure(self, [x, y]) )
-					
-				elif char == "^":
-					modules.append( Engine(self, [x, y], [0, 1]) )
-					engines.append(modules[-1])
-				
-				elif char == "v":
-					modules.append( Engine(self, [x, y], [0, -1]) )
-					engines.append(modules[-1])
-					
-				elif char == "V":
-					modules.append( Engine(self, [x, y], [0, -2]) )
-					engines.append(modules[-1])
-									
-				x += 1
+		for moduleType, x, y in ShipDesign.AllModules():
+			module = None
 			
-			y += 1
+			if moduleType == "C":
+				module = FlightComputer(self, [x, y])
+			elif moduleType == "S":
+				module = Structure(self, [x, y])
+			elif moduleType == "<":
+				module = Engine(self, [x, y], [-2, 0])
+			elif moduleType == "[":
+				module = Engine(self, [x, y], [-1, 0])
+			elif moduleType == "]":
+				module = Engine(self, [x, y], [1, 0])
 			
-		self.modules = modules
-		self.engines = engines
+			self.modules.append(module)
+			
+		self.engines = [m for m in self.modules if isinstance(m, Engine)]
 		
 	def ScanForTargets(self):
 		return [ t for t in self.scanner() if t != self ]
@@ -162,8 +133,6 @@ class Ship(Physics.PhysicsBody):
 	def Draw(self, dc):
 		for m in self.modules:
 			m.Draw(dc)
-		
-		dc.DrawLine(0, 0, 50, 50)
 		
 	def Simulate(self):
 		self.position = Vector.Add(self.position, self.velocity)
