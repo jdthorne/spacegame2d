@@ -5,9 +5,13 @@ import Scalar
 import Vector
 
 MAXIMUM_ROTATE_POWER = 0.25
+BURN_SPEED = 2.0
 
-def MaximumDeltaSpin(engines):
-	return engines[0].DeltaSpinAtPower(MAXIMUM_ROTATE_POWER) + engines[1].DeltaSpinAtPower(-MAXIMUM_ROTATE_POWER)
+def EnginesFacing(engines, sign):
+	return [e for e in engines if Scalar.Sign(e.DeltaSpinAtPower(MAXIMUM_ROTATE_POWER)) == sign]
+
+def MaximumDeltaSpin(engines, sign):
+	return Vector.Sum( [e.DeltaSpinAtPower(MAXIMUM_ROTATE_POWER) for e in EnginesFacing(engines, sign)] )
 
 # Autopilot Library
 class RotateTo:
@@ -24,7 +28,6 @@ class RotateTo:
 		self.flightMode(ship)
 		
 	def Startup(self, ship):
-		self.lastDeltaAngle = math.pi * 4
 		self.flightMode = self.Rotate
 		
 	def Rotate(self, ship):
@@ -38,41 +41,62 @@ class RotateTo:
 		
 		targetAcceleration = -(ship.spin**2) / (2*deltaAngle)
 		
-		enginePower = targetAcceleration / MaximumDeltaSpin(ship.engines)
+		enginePower = 0.0
 		
-		# Settle out if we're almost there
-		if abs(deltaAngle) < abs(2 * ship.spin):
-			self.flightMode = self.Stabilize
-			
-		# Or: burn if we have a long ways to go
-		elif abs(targetAcceleration) < abs(MaximumDeltaSpin(ship.engines) / 2):
-			enginePower = -Scalar.Sign(deltaAngle)
-		
-		# Or: kick-start the engine if we're stuck
-		elif abs(deltaAngle) > 3 and enginePower == 0:
+		if abs(deltaAngle) > 1 and abs(targetAcceleration) == 0:
+			print "KICK"
 			enginePower = 1.0
+			
+		else:
+			maxRotate = MaximumDeltaSpin(ship.engines, -Scalar.Sign(targetAcceleration))			
+			maxDerotate = MaximumDeltaSpin(ship.engines, Scalar.Sign(targetAcceleration))
 
-		#print "Engine power: %.3f  Delta Angle: %.3f" % (enginePower, deltaAngle)
+			enginePower = targetAcceleration / maxDerotate
 		
-		ship.engines[0].power = +(enginePower * MAXIMUM_ROTATE_POWER)
-		ship.engines[1].power = -(enginePower * MAXIMUM_ROTATE_POWER)
-		self.lastDeltaAngle = deltaAngle
+			# Stabilize out if we're almost there
+			if abs(deltaAngle) < abs(2 * ship.spin):
+				print "STABILIZE"
+				self.flightMode = self.Stabilize
+				pass
+				
+			# Or: burn if we have a long ways to go
+			elif abs(targetAcceleration) < abs(maxDerotate / 3):
+				print "BURN -> %.3f, %.3f" % (targetAcceleration, maxDerotate)
+				enginePower = -Scalar.Sign(deltaAngle)
+				
+			else:
+				enginePower = abs(enginePower) * Scalar.Sign(deltaAngle)
+				print "NORMAL -> %.3f %.3f" % (enginePower, deltaAngle)
+		
+		self.FireEngines(ship, enginePower)
+		
 		
 	def Stabilize(self, ship):
 		targetAcceleration = -ship.spin
 		
-		enginePower = targetAcceleration / MaximumDeltaSpin(ship.engines)
-		ship.engines[0].power = +(MAXIMUM_ROTATE_POWER * enginePower)
-		ship.engines[1].power = -(MAXIMUM_ROTATE_POWER * enginePower)
-		
-		if abs(ship.spin) < 0.0000001:
-			ship.engines[0].power = 0
-			ship.engines[1].power = 0
+		if abs(targetAcceleration) < 0.00001:
+			self.FireEngines(ship, 0.0)
 			self.flightMode = None
+			
+		else:
+			enginePower = -targetAcceleration / MaximumDeltaSpin(ship.engines, Scalar.Sign(targetAcceleration))
+			
+			self.FireEngines(ship, enginePower)
+			
+	def FireEngines(self, ship, power):
+		enginesToFire = EnginesFacing(ship.engines, -Scalar.Sign(power))
+		for engine in ship.engines:
+			if power != 0 and engine in enginesToFire:
+				engine.power = +(abs(power) * MAXIMUM_ROTATE_POWER)
+				
+			else:
+				engine.power = 0
+		
 
 
 class Burn:
-	def __init__(self, targetVelocity, nextFlightMode):
+	def __init__(self, engines, targetVelocity, nextFlightMode):
+		self.engines = engines
 		self.targetVelocity = targetVelocity
 		self.nextFlightMode = nextFlightMode
 		
@@ -82,12 +106,12 @@ class Burn:
 	
 		# Figure out how much spin each engine contributes
 		safestEngine = None
-		for engine in ship.engines:
+		for engine in self.engines:
 			if safestEngine == None or abs(engine.DeltaSpinAtPower(1.0)) < abs(safestEngine.DeltaSpinAtPower(1.0)):
 				safestEngine = engine
 
 		# Now power each engine based on it's fraction of the spinniest
-		for engine in ship.engines:
+		for engine in self.engines:
 			fraction = abs(safestEngine.DeltaSpinAtPower(1.0)) / abs(engine.DeltaSpinAtPower(1.0))
 			engine.power = fraction
 
@@ -107,28 +131,29 @@ class Autopilot:
 		
 		if nextMode != None:
 			self.flightMode = nextMode
+			
+	def KillAllEngines(self, ship):
+		for e in ship.engines:
+			e.power = 0
 		
 	def Startup(self, ship):
 		self.flightMode = self.TurnAtBottom
-		# self.flightMode = Burn([0, 2], self.CoastToBottom)
 		
 	def CoastToBottom(self, ship):
-		ship.engines[0].power = 0.0
-		ship.engines[1].power = 0.0
+		self.KillAllEngines(ship)
 		
 		if ship.position[1] > 550:
 			self.flightMode = self.TurnAtBottom
 		
 	def TurnAtBottom(self, ship):
-		self.flightMode = RotateTo( math.pi, Burn([0, -2], self.CoastToTop) )
+		self.flightMode = RotateTo( math.pi, Burn(ship.thrustEngines, [0, -BURN_SPEED], self.CoastToTop) )
 
 	def CoastToTop(self, ship):
-		ship.engines[0].power = 0.0
-		ship.engines[1].power = 0.0
+		self.KillAllEngines(ship)
 
 		if ship.position[1] < 170:
 			self.flightMode = self.TurnAtTop
 		
 	def TurnAtTop(self, ship):
-		self.flightMode = RotateTo( 0, Burn([0, 2], self.CoastToBottom) )
+		self.flightMode = RotateTo( 0, Burn(ship.thrustEngines, [0, BURN_SPEED], self.CoastToBottom) )
 		

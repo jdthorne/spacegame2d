@@ -2,6 +2,9 @@
 import math
 
 def Sum(vector):
+	if len(vector) == 0:
+		return 0
+
 	add = lambda a, b: a + b
 	return reduce(add, vector)
 

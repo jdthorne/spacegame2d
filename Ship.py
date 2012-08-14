@@ -53,7 +53,7 @@ class Engine(Module):
 		return Vector.Scale(self.thrustVector, self.power)
 		
 	def Simulate(self):
-		self.power = Scalar.Bound(-1, self.power, 1)
+		self.power = Scalar.Bound(0, self.power, 1)
 	
 		self.parent.ApplyForce(self.CurrentThrust(), self.position)
 		
@@ -62,19 +62,21 @@ class Engine(Module):
 		return self.parent.CalculateDeltaSpinDueToForce(thrustAtPower, self.position)
 		
 	def Draw(self, dc):
-		visualPower = Scalar.Bound(-1, abs(self.power * 0.5) + 0.5, 1)
-		visualPower = visualPower * -Scalar.Sign(self.power)
-	
-		jetVector = Vector.Scale(self.thrustVector, visualPower)
+		if self.power > 0.01:
+			visualPower = Scalar.Bound(0, self.power, 1)
+			visualPower = (visualPower / 2) + 0.5
+			visualPower = visualPower * -1
 		
-		jetPoint = Vector.Add(self.position, jetVector)
-		jetPosition = Vector.Rotate(Vector.Scale(jetPoint, 20), self.parent.rotation)
-		jetAbsolutePosition = Vector.Add(jetPosition, self.parent.position)
-		x, y = jetAbsolutePosition
-		
-		dc.SetPen(wx.TRANSPARENT_PEN)
-		dc.SetBrush(wx.Brush(wx.Colour( int(255.0 * abs(visualPower)), int(128.0 * abs(visualPower)), 0 )))
-		dc.DrawCircle(x, y, 15 * abs(visualPower))
+			jetVector = Vector.Scale(self.thrustVector, visualPower)
+			
+			jetPoint = Vector.Add(self.position, jetVector)
+			jetPosition = Vector.Rotate(Vector.Scale(jetPoint, 20), self.parent.rotation)
+			jetAbsolutePosition = Vector.Add(jetPosition, self.parent.position)
+			x, y = jetAbsolutePosition
+			
+			dc.SetPen(wx.TRANSPARENT_PEN)
+			dc.SetBrush(wx.Brush(wx.Colour( int(255.0 * abs(visualPower)), int(128.0 * abs(visualPower)), 0 )))
+			dc.DrawCircle(x, y, 15 * abs(visualPower))
 
 		Module.Draw(self, dc)
 
@@ -84,15 +86,24 @@ class Ship(Physics.PhysicsBody):
 	
 		nose = Structure(self, [0, 1])
 		flightComputer = FlightComputer(self, [0, 0])
+		core = [ nose, flightComputer ]
 		
 		leftPod = Structure(self, [2, 0])
-		leftEngine = Engine(self, [1, 0], [0, 1])
-		
 		rightPod = Structure(self, [-2, 0])
-		rightEngine = Engine(self, [-1, 0], [0, 1])
+		pods = [ leftPod, rightPod ]
 		
-		self.modules = [ nose, flightComputer, leftPod, leftEngine, rightPod, rightEngine  ]
-		self.engines = [ leftEngine, rightEngine ]
+		leftBrake = Engine(self, [1, 0], [0, -1])		
+		rightBrake = Engine(self, [-1, 0], [0, -1])
+		brakeEngines = [ leftBrake, rightBrake ]
+		
+		leftThrust = Engine(self, [3, 0], [0, 1])
+		rightThrust = Engine(self, [-3, 0], [0, 1])
+		thrustEngines = [ leftThrust, rightThrust ]
+		
+		self.modules = core + pods + brakeEngines + thrustEngines
+		
+		self.engines = brakeEngines + thrustEngines
+		self.thrustEngines = thrustEngines
 
 	def CenterOfMass(self):
 		x = Vector.Sum([m.mass * m.position[0] for m in self.modules]) / len(self.modules)

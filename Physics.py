@@ -8,7 +8,7 @@ class PhysicsBody:
 		self.velocity = [ 0, 0 ]
 		
 		self.rotation = 0
-		self.spin = 0.15
+		self.spin = 0.02
 		
 	# ============ FUNCTIONS YOU SHOULD REIMPLEMENT ==============
 	def Mass(self):
@@ -41,7 +41,7 @@ class PhysicsBody:
 		dx, dy = Vector.Offset(self.CenterOfMass(), atPoint)
 		tx, ty = force
 		
-		torque = dx*ty - dy*tx
+		torque = -(dx*ty - dy*tx)
 		
 		return torque / self.MomentOfInertia()
 
