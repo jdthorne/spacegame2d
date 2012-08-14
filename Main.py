@@ -7,7 +7,7 @@ app = wx.App(False)
 frame = wx.Frame(None, title="Starsplosion", size=(1280, 720))
 panel = wx.Panel(frame)
 
-all = [ Ship.Ship() ]
+all = []
 
 def SimulateAll(event=None):
 	for object in all:
@@ -21,6 +21,12 @@ def PaintAll(event):
 	
 	for object in all:
 		object.Draw(dc)
+		
+def Scan():
+	return all
+	
+all.append(Ship.Ship( [1280/4, 720/2], scanner=Scan, powered=True ))
+all.append(Ship.Ship( [1280*(3.0/4), 720/2] ))
 
 panel.Bind(wx.EVT_PAINT, PaintAll)
 		

@@ -5,6 +5,7 @@ import math
 import Vector
 import Scalar
 
+import ShipControls
 import Autopilot
 import Physics
 
@@ -50,7 +51,7 @@ class FlightComputer(Module):
 		self.autopilot = Autopilot.Autopilot()
 
 	def Simulate(self):
-		self.autopilot(self.parent)
+		self.autopilot(ShipControls.ShipWrapper(self.parent))
 
 class Engine(Module):
 	def __init__(self, parent, position, thrustVector):
@@ -92,8 +93,11 @@ class Engine(Module):
 		Module.Draw(self, dc)
 
 class Ship(Physics.PhysicsBody):
-	def __init__(self):
-		Physics.PhysicsBody.__init__(self)
+	def __init__(self, position, scanner=None, powered=False):
+		Physics.PhysicsBody.__init__(self, position)
+		
+		self.scanner = scanner
+		self.powered = powered
 		
 		xInitial = 0
 		yInitial = 0
@@ -135,6 +139,9 @@ class Ship(Physics.PhysicsBody):
 			
 		self.modules = modules
 		self.engines = engines
+		
+	def ScanForTargets(self):
+		return [ t for t in self.scanner() if t != self ]
 
 	def CenterOfMass(self):
 		x = Vector.Sum([m.mass * m.position[0] for m in self.modules]) / len(self.modules)
@@ -163,4 +170,5 @@ class Ship(Physics.PhysicsBody):
 		self.rotation = (self.rotation + self.spin) % (2 * math.pi)
 	
 		for m in self.modules:
-			m.Simulate()
+			if self.powered:
+				m.Simulate()

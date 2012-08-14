@@ -3,8 +3,8 @@ import Scalar
 import Vector
 
 class PhysicsBody:
-	def __init__(self):
-		self.position = [ 1280/2, 720/2 ]
+	def __init__(self, position):
+		self.position = position
 		self.velocity = [ 0, 0 ]
 		
 		self.rotation = 0
@@ -44,4 +44,3 @@ class PhysicsBody:
 		torque = -(dx*ty - dy*tx)
 		
 		return torque / self.MomentOfInertia()
-
