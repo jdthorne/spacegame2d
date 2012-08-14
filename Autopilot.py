@@ -44,6 +44,7 @@ class RotateTo:
 		enginePower = 0.0
 		
 		if abs(deltaAngle) > 1 and abs(targetAcceleration) == 0:
+			# Kick the engine if necessary
 			print "KICK"
 			enginePower = 1.0
 			
@@ -51,27 +52,26 @@ class RotateTo:
 			maxRotate = MaximumDeltaSpin(ship.engines, -Scalar.Sign(targetAcceleration))			
 			maxDerotate = MaximumDeltaSpin(ship.engines, Scalar.Sign(targetAcceleration))
 
-			enginePower = targetAcceleration / maxDerotate
+			enginePower = -targetAcceleration / maxDerotate
 		
 			# Stabilize out if we're almost there
 			if abs(deltaAngle) < abs(2 * ship.spin):
-				print "STABILIZE"
 				self.flightMode = self.Stabilize
 				pass
 				
 			# Or: burn if we have a long ways to go
 			elif abs(targetAcceleration) < abs(maxDerotate / 3):
-				print "BURN -> %.3f, %.3f" % (targetAcceleration, maxDerotate)
-				enginePower = -Scalar.Sign(deltaAngle)
+				print "BURN"
+				enginePower = -Scalar.Sign(enginePower)
 				
 			else:
-				enginePower = abs(enginePower) * Scalar.Sign(deltaAngle)
-				print "NORMAL -> %.3f %.3f" % (enginePower, deltaAngle)
+				print "NORMAL"
 		
 		self.FireEngines(ship, enginePower)
 		
 		
 	def Stabilize(self, ship):
+		print "STABILIZE"
 		targetAcceleration = -ship.spin
 		
 		if abs(targetAcceleration) < 0.00001:
@@ -84,7 +84,7 @@ class RotateTo:
 			self.FireEngines(ship, enginePower)
 			
 	def FireEngines(self, ship, power):
-		enginesToFire = EnginesFacing(ship.engines, -Scalar.Sign(power))
+		enginesToFire = EnginesFacing(ship.engines, Scalar.Sign(power))
 		for engine in ship.engines:
 			if power != 0 and engine in enginesToFire:
 				engine.power = +(abs(power) * MAXIMUM_ROTATE_POWER)

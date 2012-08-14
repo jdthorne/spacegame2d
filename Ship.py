@@ -96,8 +96,8 @@ class Ship(Physics.PhysicsBody):
 		rightBrake = Engine(self, [-1, 0], [0, -1])
 		brakeEngines = [ leftBrake, rightBrake ]
 		
-		leftThrust = Engine(self, [3, 0], [0, 1])
-		rightThrust = Engine(self, [-3, 0], [0, 1])
+		leftThrust = Engine(self, [2, -1], [0, 1])
+		rightThrust = Engine(self, [-2, -1], [0, 1])
 		thrustEngines = [ leftThrust, rightThrust ]
 		
 		self.modules = core + pods + brakeEngines + thrustEngines
