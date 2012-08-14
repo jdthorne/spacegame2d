@@ -5,25 +5,31 @@ import math
 import Autopilot
 
 class Module:
-	def __init__(self, parent, position, color, mass):
+	def __init__(self, parent, position, mass, color=None):
 		self.parent = parent
 		self.position = position
-		self.color = color
 		self.mass = mass
+
+		self.color = color
+
+	def Draw(self, dc):
+		relativePosition = Vector.Rotate(Vector.Scale(self.position, 20), self.parent.rotation)
+		absolutePosition = Vector.Add(relativePosition, self.parent.position)
+		x, y = absolutePosition
 		
-	def Color(self):
-		return self.color
+		dc.SetBrush(wx.Brush(self.color))
+		dc.DrawCircle(x, y, 10)
 
 	def Simulate(self):
 		pass
 		
-class StructuralSupport(Module):
+class Structure(Module):
 	def __init__(self, parent, position):
-		Module.__init__(self, parent, position, wx.GREEN, 2)
+		Module.__init__(self, parent, position, 2, wx.Colour(128, 128, 128))
 
 class FlightComputer(Module):
 	def __init__(self, parent, position):
-		Module.__init__(self, parent, position, wx.BLUE, 10)
+		Module.__init__(self, parent, position, 10, wx.Colour(128, 128, 255))
 		
 		self.autopilot = Autopilot.Autopilot()
 
@@ -32,7 +38,7 @@ class FlightComputer(Module):
 
 class Engine(Module):
 	def __init__(self, parent, position, thrustVector):
-		Module.__init__(self, parent, position, wx.RED, 5)
+		Module.__init__(self, parent, position, 5, wx.Colour(64, 64, 64))
 		
 		self.thrustVector = thrustVector
 		
@@ -44,6 +50,8 @@ class Engine(Module):
 	def Simulate(self):
 		if self.power > 1:
 			self.power = 1
+		elif self.power < -1:
+			self.power = -1
 	
 		# Velocity
 		thrust = Vector.Rotate(self.CurrentThrust(), self.parent.rotation)
@@ -56,36 +64,47 @@ class Engine(Module):
 		
 	def DeltaSpinAtPower(self, power):
 		dx, dy = Vector.Offset(self.parent.CenterOfMass(), self.position)
-		tx, ty = Vector.Scale(self.thrustVector, power)
-
+		tx, ty = Vector.Scale(self.thrustVector, abs(power))
+		
 		torque = dx*ty - dy*tx
+		torque = torque * -Vector.Sign(power)
 		return torque / self.parent.MomentOfInertia()
 		
-	def Color(self):
-		if abs(self.power) > 0.01:
-			return wx.RED
+	def Draw(self, dc):
+		jetVector = Vector.Scale(self.thrustVector, -Vector.Sign(self.power))
+		jetPoint = Vector.Add(self.position, jetVector)
+		jetPosition = Vector.Rotate(Vector.Scale(jetPoint, 20), self.parent.rotation)
+		jetAbsolutePosition = Vector.Add(jetPosition, self.parent.position)
+		x, y = jetAbsolutePosition
 		
-		return wx.BLACK
+		dc.SetBrush(wx.Brush(wx.Colour( int(255.0 * abs(self.power)), int(128.0 * abs(self.power)), 0 )))
+		dc.DrawCircle(x, y, 15 * self.power)
+
+		Module.Draw(self, dc)
 
 class Ship:
 	def __init__(self):
-		nose = StructuralSupport(self, [0, 1])
+		nose = Structure(self, [0, 1])
 		flightComputer = FlightComputer(self, [0, 0])
+		
+		leftPod = Structure(self, [2, 0])
 		leftEngine = Engine(self, [1, 0], [0, 1])
+		
+		rightPod = Structure(self, [-2, 0])
 		rightEngine = Engine(self, [-1, 0], [0, 1])
 		
 		self.position = [ 1280/2, 720/2 ]
 		self.velocity = [ 0, 0 ]
 		
 		self.rotation = 0
-		self.spin = 0
+		self.spin = 0.15
 		
-		self.modules = [ nose, flightComputer, leftEngine, rightEngine  ]
+		self.modules = [ nose, flightComputer, leftPod, leftEngine, rightPod, rightEngine  ]
 		self.engines = [ leftEngine, rightEngine ]
 
 	def CenterOfMass(self):
-		x = Vector.Sum([m.mass * m.position[0] for m in self.modules])
-		y = Vector.Sum([m.mass * m.position[1] for m in self.modules])
+		x = Vector.Sum([m.mass * m.position[0] for m in self.modules]) / len(self.modules)
+		y = Vector.Sum([m.mass * m.position[1] for m in self.modules]) / len(self.modules)
 		
 		return [x, y]
 
@@ -103,13 +122,7 @@ class Ship:
 		dc.SetPen(wx.Pen(wx.BLACK, 2))
 		
 		for m in self.modules:
-			relativePosition = Vector.Rotate(Vector.Scale(m.position, 20), self.rotation)
-			absolutePosition = Vector.Add(relativePosition, self.position)
-			
-			x, y = absolutePosition
-			
-			dc.SetBrush(wx.Brush(m.Color()))
-			dc.DrawCircle( x, y, 10)
+			m.Draw(dc)
 		
 		dc.DrawLine(0, 0, 50, 50)
 		

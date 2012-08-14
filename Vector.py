@@ -42,3 +42,12 @@ def Midpoint(a, b):
 	
 def ShortestAngleBetween(a, b):
 	return math.atan2(math.sin(b - a), math.cos(b - a))
+	
+def Sign(number):
+	if number > 0:
+		return 1
+	if number < 0:
+		return -1
+		
+	return 0
+
