@@ -4,8 +4,8 @@ import math
 import Scalar
 import Vector
 
-MAXIMUM_ROTATE_POWER = 0.25
-BURN_SPEED = 2.0
+MAXIMUM_ROTATE_POWER = 0.5
+BURN_SPEED = 4.0
 
 def EnginesFacing(engines, sign):
 	return [e for e in engines if Scalar.Sign(e.DeltaSpinAtPower(MAXIMUM_ROTATE_POWER)) == sign]
@@ -99,24 +99,28 @@ class RotateTo:
 
 
 class Burn:
-	def __init__(self, engines, targetVelocity, nextFlightMode):
-		self.engines = engines
-		self.targetVelocity = targetVelocity
+	def __init__(self, targetSpeed, nextFlightMode):
+		self.targetSpeed = targetSpeed
 		self.nextFlightMode = nextFlightMode
-		
-		self.lastDeltaV = 9999999
 		
 	def __call__(self, ship):
 	
-		for engine in self.engines:
-			engine.power = 1.0
-
-		currentDeltaV = Vector.Magnitude(Vector.Offset(ship.velocity, self.targetVelocity))
+		forwardVector = Vector.Rotate( [0, -1], ship.rotation )
 		
-		if currentDeltaV > self.lastDeltaV:
+		speed = Vector.ScalarProjection(ship.velocity, forwardVector)
+		print speed
+		
+		if abs(self.targetSpeed - speed) < 0.1:
 			return self.nextFlightMode
 			
-		self.lastDeltaV = currentDeltaV
+		power = -Scalar.Sign(self.targetSpeed - speed)
+		
+		for engine in ship.engines:
+			if Scalar.Sign(engine.thrustVector[1]) == Scalar.Sign(power):
+				engine.power = 1.0
+			else:
+				engine.power = 0.0
+
 
 class Autopilot:
 	def __init__(self):
@@ -142,7 +146,7 @@ class Autopilot:
 			self.flightMode = self.TurnAtBottom
 		
 	def TurnAtBottom(self, ship):
-		self.flightMode = RotateTo( 0, Burn(ship.thrustEngines, [0, -BURN_SPEED], self.CoastToTop) )
+		self.flightMode = Burn(2, RotateTo( 0, Burn(BURN_SPEED, self.CoastToTop) ))
 
 	def CoastToTop(self, ship):
 		self.KillAllEngines(ship)
@@ -151,5 +155,5 @@ class Autopilot:
 			self.flightMode = self.TurnAtTop
 		
 	def TurnAtTop(self, ship):
-		self.flightMode = RotateTo( math.pi, Burn(ship.thrustEngines, [0, BURN_SPEED], self.CoastToBottom) )
+		self.flightMode = Burn(2, RotateTo( math.pi, Burn(BURN_SPEED, self.CoastToBottom) ))
 		

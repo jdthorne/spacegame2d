@@ -135,9 +135,6 @@ class Ship(Physics.PhysicsBody):
 			
 		self.modules = modules
 		self.engines = engines
-		
-		#self.
-		self.thrustEngines = self.engines[2:]
 
 	def CenterOfMass(self):
 		x = Vector.Sum([m.mass * m.position[0] for m in self.modules]) / len(self.modules)
