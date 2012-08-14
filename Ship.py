@@ -1,8 +1,12 @@
 
 import wx
-import Vector
 import math
+
+import Vector
+import Scalar
+
 import Autopilot
+import Physics
 
 class Module:
 	def __init__(self, parent, position, mass, color=None):
@@ -17,6 +21,7 @@ class Module:
 		absolutePosition = Vector.Add(relativePosition, self.parent.position)
 		x, y = absolutePosition
 		
+		dc.SetPen(wx.Pen(wx.BLACK, 2))
 		dc.SetBrush(wx.Brush(self.color))
 		dc.DrawCircle(x, y, 10)
 
@@ -42,48 +47,41 @@ class Engine(Module):
 		
 		self.thrustVector = thrustVector
 		
-		self.power = 0.2
+		self.power = 0
 		
 	def CurrentThrust(self):
 		return Vector.Scale(self.thrustVector, self.power)
 		
 	def Simulate(self):
-		if self.power > 1:
-			self.power = 1
-		elif self.power < -1:
-			self.power = -1
+		self.power = Scalar.Bound(-1, self.power, 1)
 	
-		# Velocity
-		thrust = Vector.Rotate(self.CurrentThrust(), self.parent.rotation)
-		deltaV = Vector.Scale(thrust, 1.0/self.parent.Mass())
-		
-		self.parent.velocity = Vector.Add(self.parent.velocity, deltaV)
-		
-		# Rotation
-		self.parent.spin += self.DeltaSpinAtPower(self.power)
+		self.parent.ApplyForce(self.CurrentThrust(), self.position)
 		
 	def DeltaSpinAtPower(self, power):
-		dx, dy = Vector.Offset(self.parent.CenterOfMass(), self.position)
-		tx, ty = Vector.Scale(self.thrustVector, abs(power))
-		
-		torque = dx*ty - dy*tx
-		torque = torque * -Vector.Sign(power)
-		return torque / self.parent.MomentOfInertia()
+		thrustAtPower = Vector.Scale(self.thrustVector, power)
+		return self.parent.CalculateDeltaSpinDueToForce(thrustAtPower, self.position)
 		
 	def Draw(self, dc):
-		jetVector = Vector.Scale(self.thrustVector, -Vector.Sign(self.power))
+		visualPower = Scalar.Bound(-1, abs(self.power * 0.5) + 0.5, 1)
+		visualPower = visualPower * -Scalar.Sign(self.power)
+	
+		jetVector = Vector.Scale(self.thrustVector, visualPower)
+		
 		jetPoint = Vector.Add(self.position, jetVector)
 		jetPosition = Vector.Rotate(Vector.Scale(jetPoint, 20), self.parent.rotation)
 		jetAbsolutePosition = Vector.Add(jetPosition, self.parent.position)
 		x, y = jetAbsolutePosition
 		
-		dc.SetBrush(wx.Brush(wx.Colour( int(255.0 * abs(self.power)), int(128.0 * abs(self.power)), 0 )))
-		dc.DrawCircle(x, y, 15 * self.power)
+		dc.SetPen(wx.TRANSPARENT_PEN)
+		dc.SetBrush(wx.Brush(wx.Colour( int(255.0 * abs(visualPower)), int(128.0 * abs(visualPower)), 0 )))
+		dc.DrawCircle(x, y, 15 * abs(visualPower))
 
 		Module.Draw(self, dc)
 
-class Ship:
+class Ship(Physics.PhysicsBody):
 	def __init__(self):
+		Physics.PhysicsBody.__init__(self)
+	
 		nose = Structure(self, [0, 1])
 		flightComputer = FlightComputer(self, [0, 0])
 		
@@ -92,12 +90,6 @@ class Ship:
 		
 		rightPod = Structure(self, [-2, 0])
 		rightEngine = Engine(self, [-1, 0], [0, 1])
-		
-		self.position = [ 1280/2, 720/2 ]
-		self.velocity = [ 0, 0 ]
-		
-		self.rotation = 0
-		self.spin = 0.15
 		
 		self.modules = [ nose, flightComputer, leftPod, leftEngine, rightPod, rightEngine  ]
 		self.engines = [ leftEngine, rightEngine ]
@@ -119,8 +111,6 @@ class Ship:
 		return Vector.Sum([MassRadiusSquared(m) for m in self.modules])
 
 	def Draw(self, dc):
-		dc.SetPen(wx.Pen(wx.BLACK, 2))
-		
 		for m in self.modules:
 			m.Draw(dc)
 		

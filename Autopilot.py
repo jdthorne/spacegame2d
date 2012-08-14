@@ -1,5 +1,7 @@
 
 import math
+
+import Scalar
 import Vector
 
 MAXIMUM_ROTATE_POWER = 0.25
@@ -42,22 +44,21 @@ class RotateTo:
 		if abs(deltaAngle) < abs(2 * ship.spin):
 			self.flightMode = self.Stabilize
 			
-		# Or: burn if we have a long ways to go	
+		# Or: burn if we have a long ways to go
 		elif abs(targetAcceleration) < abs(MaximumDeltaSpin(ship.engines) / 2):
-			enginePower = Vector.Sign(deltaAngle)
+			enginePower = -Scalar.Sign(deltaAngle)
 		
 		# Or: kick-start the engine if we're stuck
 		elif abs(deltaAngle) > 3 and enginePower == 0:
 			enginePower = 1.0
 
-		print "Engine power: %.3f  Delta Angle: %.3f" % (enginePower, deltaAngle)
+		#print "Engine power: %.3f  Delta Angle: %.3f" % (enginePower, deltaAngle)
 		
 		ship.engines[0].power = +(enginePower * MAXIMUM_ROTATE_POWER)
 		ship.engines[1].power = -(enginePower * MAXIMUM_ROTATE_POWER)
 		self.lastDeltaAngle = deltaAngle
 		
 	def Stabilize(self, ship):
-		print "Stabilizing... %0.5f" % (ship.spin,)
 		targetAcceleration = -ship.spin
 		
 		enginePower = targetAcceleration / MaximumDeltaSpin(ship.engines)
