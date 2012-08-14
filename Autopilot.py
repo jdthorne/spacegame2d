@@ -33,6 +33,10 @@ class RotateTo:
 	def Rotate(self, ship):
 		deltaAngle = Vector.ShortestAngleBetween(ship.rotation, self.targetRotation)
 		
+		if deltaAngle == 0:
+			self.flightMode = self.Stabilize
+			return
+		
 		# Maxima - r = remaining rotation, a = acceleration, t = time, 
 		#          s = spin, sf = final spin
 		# 
@@ -57,7 +61,7 @@ class RotateTo:
 			# Stabilize out if we're almost there
 			if abs(deltaAngle) < abs(2 * ship.spin):
 				self.flightMode = self.Stabilize
-				pass
+				return
 				
 			# Or: burn if we have a long ways to go
 			elif abs(targetAcceleration) < abs(maxDerotate / 3):
@@ -104,16 +108,8 @@ class Burn:
 		
 	def __call__(self, ship):
 	
-		# Figure out how much spin each engine contributes
-		safestEngine = None
 		for engine in self.engines:
-			if safestEngine == None or abs(engine.DeltaSpinAtPower(1.0)) < abs(safestEngine.DeltaSpinAtPower(1.0)):
-				safestEngine = engine
-
-		# Now power each engine based on it's fraction of the spinniest
-		for engine in self.engines:
-			fraction = abs(safestEngine.DeltaSpinAtPower(1.0)) / abs(engine.DeltaSpinAtPower(1.0))
-			engine.power = fraction
+			engine.power = 1.0
 
 		currentDeltaV = Vector.Magnitude(Vector.Offset(ship.velocity, self.targetVelocity))
 		
@@ -146,7 +142,7 @@ class Autopilot:
 			self.flightMode = self.TurnAtBottom
 		
 	def TurnAtBottom(self, ship):
-		self.flightMode = RotateTo( math.pi, Burn(ship.thrustEngines, [0, -BURN_SPEED], self.CoastToTop) )
+		self.flightMode = RotateTo( 0, Burn(ship.thrustEngines, [0, -BURN_SPEED], self.CoastToTop) )
 
 	def CoastToTop(self, ship):
 		self.KillAllEngines(ship)
@@ -155,5 +151,5 @@ class Autopilot:
 			self.flightMode = self.TurnAtTop
 		
 	def TurnAtTop(self, ship):
-		self.flightMode = RotateTo( 0, Burn(ship.thrustEngines, [0, BURN_SPEED], self.CoastToBottom) )
+		self.flightMode = RotateTo( math.pi, Burn(ship.thrustEngines, [0, BURN_SPEED], self.CoastToBottom) )
 		

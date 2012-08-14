@@ -45,3 +45,6 @@ def Midpoint(a, b):
 	
 def ShortestAngleBetween(a, b):
 	return math.atan2(math.sin(b - a), math.cos(b - a))
+
+def Normalize(vector):
+	return Scale(vector, 1.0 / Magnitude(vector))

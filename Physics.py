@@ -8,7 +8,7 @@ class PhysicsBody:
 		self.velocity = [ 0, 0 ]
 		
 		self.rotation = 0
-		self.spin = 0.02
+		self.spin = 0
 		
 	# ============ FUNCTIONS YOU SHOULD REIMPLEMENT ==============
 	def Mass(self):
