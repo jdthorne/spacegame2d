@@ -1,138 +1,98 @@
 
 import math
 
+import HUD
 import Scalar
 import Vector
 
-MAXIMUM_ROTATE_POWER = 0.5
-BURN_SPEED = 4.0
+def CalculatePowerLevelForSmoothApproach(distance, currentSpeed, maxPositiveAcceleration, maxNegativeAcceleration):
+	if abs(distance) < 0.000001:
+		return 0.0
 
-def EnginesFacing(engines, sign):
-	return [e for e in engines if Scalar.Sign(e.DeltaSpinAtPower(MAXIMUM_ROTATE_POWER)) == sign]
+	if abs(distance) < abs(currentSpeed * 4.0):
+		return 0.0
 
-def MaximumDeltaSpin(engines, sign):
-	return Vector.Sum( [e.DeltaSpinAtPower(MAXIMUM_ROTATE_POWER) for e in EnginesFacing(engines, sign)] )
+	targetAcceleration = -(currentSpeed**2) / (2*distance)
+	maxAppropriateAcceleration = maxNegativeAcceleration if distance < 0 else maxPositiveAcceleration
+	maxAppropriateBraking = maxPositiveAcceleration if distance < 0 else maxNegativeAcceleration
+	
+	info = "[ Distance = %07.2f, Speed = %.5f, Target Acc = %.5f, Max Braking = %.5f ]" % (distance, currentSpeed, targetAcceleration, maxAppropriateBraking)
 
-# Autopilot Library
-class RotateTowards:
-	def __init__(self, target, nextFlightMode):
-		self.target = target
-		self.nextFlightMode = nextFlightMode
+	# Moving away from the target - use full power towards it
+	if Scalar.Sign(currentSpeed) != Scalar.Sign(distance):
+		return 1.0 * Scalar.Sign(distance)
+	
+	# We have lots of time to brake, so let's accelerate instead
+	elif abs(targetAcceleration) < abs(maxAppropriateBraking * 0.75):
+		return 1.0 * Scalar.Sign(distance)
 		
-		self.flightMode = self.Rotate
+	# We should brake now!
+	return abs(targetAcceleration / maxAppropriateBraking) * -Scalar.Sign(distance)
+	
+class Analysis:
+	def __init__(self, ship):
+		self.zeroDizzyEngines = [ e for e in ship.Engines() if e.Dizzy() == 0 ]
+		self.positiveDizzyEngines = [ e for e in ship.Engines() if e.Dizzy() > 0 ]
+		self.negativeDizzyEngines = [ e for e in ship.Engines() if e.Dizzy() < 0 ]
+	
+		self.maxPositiveDizzy = Vector.Sum([ e.Dizzy() for e in self.positiveDizzyEngines ])
+		self.maxNegativeDizzy = Vector.Sum([ e.Dizzy() for e in self.positiveDizzyEngines ])
 		
-	def __call__(self, ship):
-		if self.flightMode == None:
-			return self.nextFlightMode
+		self.forwardEngines = [ e for e in self.zeroDizzyEngines if e.ThrustVector()[0] > 0 ]
+		self.reverseEngines = [ e for e in self.zeroDizzyEngines if e.ThrustVector()[0] < 0 ]
+		
+		self.maxForwardAcceleration = Vector.Sum([ e.Acceleration()[0] for e in self.forwardEngines ])
+		self.maxReverseAcceleration = Vector.Sum([ e.Acceleration()[0] for e in self.reverseEngines ])
 			
-		self.flightMode(ship)
-		
-	def Rotate(self, ship):
-		deltaAngle = Vector.Direction(Vector.Rotate(self.target.Vector(), math.pi/2))
-		
-		if deltaAngle == 0:
-			self.flightMode = self.Stabilize
-			return
-		
-		# Maxima - r = remaining rotation, a = acceleration, t = time, 
-		#          s = spin, sf = final spin
-		# 
-		# solve( [ r = (1/2)*a*t^2 + s*t , sf = s + a*t ], [ a, t ]);
-		# [[a = (sf^2-s^2)/(2*r), t = (2*r)/(sf+s)]]
-		
-		targetAcceleration = -(ship.Spin()**2) / (2*deltaAngle)
-		
-		enginePower = 0.0
-		
-		if abs(deltaAngle) > 1 and abs(targetAcceleration) == 0:
-			# Kick the engine if necessary
-			enginePower = 1.0
-			
-		elif abs(targetAcceleration) == 0:
-			self.flightMode = self.Stabilize
-			
-		else:
-			maxRotate = MaximumDeltaSpin(ship.Engines(), -Scalar.Sign(targetAcceleration))			
-			maxDerotate = MaximumDeltaSpin(ship.Engines(), Scalar.Sign(targetAcceleration))
-
-			enginePower = -targetAcceleration / maxDerotate
-		
-			# Stabilize out if we're almost there
-			if abs(deltaAngle) < abs(2 * ship.Spin()):
-				self.flightMode = self.Stabilize
-				return
-				
-			# Or: burn if we have a long ways to go
-			elif abs(targetAcceleration) < abs(maxDerotate / 3):
-				enginePower = -Scalar.Sign(enginePower)
-		
-		self.FireEngines(ship, enginePower)
-		
-		
-	def Stabilize(self, ship):
-		print "STABILIZE"
-		targetAcceleration = -ship.Spin()
-		
-		if abs(targetAcceleration) < 0.00001:
-			self.FireEngines(ship, 0.0)
-			self.flightMode = None
-			
-		else:
-			enginePower = -targetAcceleration / MaximumDeltaSpin(ship.Engines(), Scalar.Sign(targetAcceleration))
-			
-			self.FireEngines(ship, enginePower)
-			
-	def FireEngines(self, ship, power):
-		enginesToFire = EnginesFacing(ship.Engines(), Scalar.Sign(power))
-		for engine in ship.Engines():
-			if power != 0 and (engine in enginesToFire):
-				engine.SetPower(abs(power) * MAXIMUM_ROTATE_POWER)
-				
-			else:
-				engine.SetPower(0)
-		
-
-
-class Burn:
-	def __init__(self, targetSpeed, nextFlightMode):
-		self.targetSpeed = targetSpeed
-		self.nextFlightMode = nextFlightMode
-		
-	def __call__(self, ship):
-		speed = -ship.Velocity()[1]
-		
-		if abs(self.targetSpeed - speed) < 0.1:
-			return self.nextFlightMode
-			
-		power = -Scalar.Sign(self.targetSpeed - speed)
-		
-		for engine in ship.Engines():
-			if Scalar.Sign(engine.ThrustVector()[1]) == Scalar.Sign(power):
-				engine.SetPower(1.0)
-			else:
-				engine.SetPower(0.0)
-
 class Autopilot:
-	def __init__(self):
-		self.flightMode = Burn(1, self.AcquireTarget)
+	def __init__(self, ship):
 		self.target = None
+		self.ship = ship
 		
-	def __call__(self, ship):
-		nextMode = self.flightMode(ship)
+		self.analysis = Analysis(self.ship)
 		
-		if nextMode != None:
-			self.flightMode = nextMode
+	def __call__(self):
+		self.target = self.ship.Sensors().Scan()[0]
+		self.RunAutopilot()
 		
-	def AcquireTarget(self, ship):
-		targets = ship.Sensors().Scan()
+	def RunAutopilot(self):		
+		self.ClearEngines()
+		self.RotateToFaceTarget()
 		
-		self.target = targets[0]
-		self.flightMode = self.Aim
+		self.ThrustToTargetRadius()
+	
+	def ClearEngines(self):
+		for e in self.ship.Engines():
+			e.SetPower(0)
+			
+	def PowerEngines(self, power, positiveEngines, negativeEngines):
+		for e in positiveEngines:
+			e.SetPower(power)
+			
+		for e in negativeEngines:
+			e.SetPower(-power)
+
+	def RotateToFaceTarget(self):
+		angularDistance = Vector.Direction(self.target.Vector())
+		angularSpeed = self.ship.Spin()
 		
-	def Aim(self, ship):
-		self.flightMode = RotateTowards(self.target, self.Burn)
+		power = CalculatePowerLevelForSmoothApproach(angularDistance, angularSpeed,
+													 self.analysis.maxPositiveDizzy, 
+											 	     self.analysis.maxNegativeDizzy)
+ 	     
+		self.PowerEngines(power, self.analysis.positiveDizzyEngines, self.analysis.negativeDizzyEngines)
+	
+	
+	def ThrustToTargetRadius(self):
+		distance = Vector.Magnitude(self.target.Vector()) - 300
+		speed = Vector.ScalarProjection(self.target.Velocity(), [0, 1])
 		
-	def Burn(self, ship):
-		self.flightMode = Burn(1, self.Aim)
+		maxTowardAcceleration = Vector.ScalarProjection([0, self.analysis.maxForwardAcceleration], self.target.Vector())
+		maxAwayAcceleration = Vector.ScalarProjection([0, self.analysis.maxForwardAcceleration], self.target.Vector())
+		
+		power = CalculatePowerLevelForSmoothApproach(distance, speed, maxTowardAcceleration, maxAwayAcceleration)
+
+		self.PowerEngines(power, self.analysis.forwardEngines, self.analysis.reverseEngines)
+			
 		
 		

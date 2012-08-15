@@ -1,5 +1,6 @@
 #!/opt/local/bin/python
 
+import HUD
 import Ship
 import wx
 
@@ -21,6 +22,8 @@ def PaintAll(event):
 	
 	for object in all:
 		object.Draw(dc)
+		
+	HUD.Draw(dc)
 		
 def Scan():
 	return all

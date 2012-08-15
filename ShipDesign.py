@@ -3,7 +3,7 @@
 
 SHIP_DESIGN = """\
      []
-    <SSSCS
+    <SSSCS>
      []
 """
 

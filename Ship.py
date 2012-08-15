@@ -2,6 +2,7 @@
 import wx
 import math
 
+import HUD
 import Vector
 import Scalar
 
@@ -40,10 +41,13 @@ class FlightComputer(Module):
 	def __init__(self, parent, position):
 		Module.__init__(self, parent, position, 10, wx.Colour(128, 128, 255))
 		
-		self.autopilot = Autopilot.Autopilot()
+		self.autopilot = None
 
 	def Simulate(self):
-		self.autopilot(ShipControls.ShipWrapper(self.parent))
+		if self.autopilot == None:
+			self.autopilot = Autopilot.Autopilot(ShipControls.ShipWrapper(self.parent))
+
+		self.autopilot()
 
 class Engine(Module):
 	def __init__(self, parent, position, thrustVector):
@@ -61,14 +65,16 @@ class Engine(Module):
 	
 		self.parent.ApplyForce(self.CurrentThrust(), self.position)
 		
-	def DeltaSpinAtPower(self, power):
-		thrustAtPower = Vector.Scale(self.thrustVector, power)
-		return self.parent.CalculateDeltaSpinDueToForce(thrustAtPower, self.position)
+	def Dizzy(self):
+		return self.parent.CalculateDeltaSpinDueToForce(self.thrustVector, self.position)
+		
+	def Acceleration(self):
+		return self.parent.CalculateDeltaVelocityDueToForce(self.thrustVector)
 		
 	def Draw(self, dc):
 		if self.power > 0.01:
 			visualPower = Scalar.Bound(0, self.power, 1)
-			visualPower = (visualPower / 2) + 0.5
+			visualPower = (visualPower / 2.0) + 0.5
 			visualPower = visualPower * -1
 		
 			jetVector = Vector.Scale(Vector.Normalize(self.thrustVector), visualPower)
@@ -101,10 +107,12 @@ class Ship(Physics.PhysicsBody):
 			elif moduleType == "S":
 				module = Structure(self, [x, y])
 			elif moduleType == "<":
+				module = Engine(self, [x, y], [2, 0])
+			elif moduleType == ">":
 				module = Engine(self, [x, y], [-2, 0])
-			elif moduleType == "[":
-				module = Engine(self, [x, y], [-1, 0])
 			elif moduleType == "]":
+				module = Engine(self, [x, y], [-1, 0])
+			elif moduleType == "[":
 				module = Engine(self, [x, y], [1, 0])
 			
 			self.modules.append(module)
@@ -137,7 +145,9 @@ class Ship(Physics.PhysicsBody):
 	def Simulate(self):
 		self.position = Vector.Add(self.position, self.velocity)
 		self.rotation = (self.rotation + self.spin) % (2 * math.pi)
-	
+		
+		HUD.frameOfReference = (self.position, self.rotation)
+		
 		for m in self.modules:
 			if self.powered:
 				m.Simulate()

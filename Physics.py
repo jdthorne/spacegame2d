@@ -1,13 +1,16 @@
 
+
+import math
+
 import Scalar
 import Vector
 
 class PhysicsBody:
 	def __init__(self, position):
 		self.position = position
-		self.velocity = [ 1, 2 ]
+		self.velocity = [ 0, 0 ]
 		
-		self.rotation = 0.2
+		self.rotation = math.pi / 2.0
 		self.spin = 0
 		
 	# ============ FUNCTIONS YOU SHOULD REIMPLEMENT ==============
@@ -26,12 +29,12 @@ class PhysicsBody:
 
 	# ========== APPLYING FORCES TO THIS BODY =============
 	def ApplyForce(self, force, atPoint):
-		acceleration = self.CalculateDeltaVelocityDueToForce(force, atPoint)
+		acceleration = self.CalculateDeltaVelocityDueToForce(force)
 		self.velocity = Vector.Add(self.velocity, acceleration)
 								   
 		self.spin += self.CalculateDeltaSpinDueToForce(force, atPoint)
 
-	def CalculateDeltaVelocityDueToForce(self, force, atPoint):
+	def CalculateDeltaVelocityDueToForce(self, force):
 		thrust = Vector.Rotate(force, self.rotation)
 		deltaV = Vector.Scale(thrust, 1.0 / self.Mass())
 		
