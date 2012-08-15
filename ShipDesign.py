@@ -1,19 +1,29 @@
 #!/opt/local/bin/python
 
 
-SHIP_DESIGN = """\
+SHIP_DESIGN = {}
+
+SHIP_DESIGN[0] = """\
+     [R]
+    [SSR]
+   <SSSCRS>
+    [SSR]
+     [R]
+"""
+
+SHIP_DESIGN[1] = """\
      []
-    <SSSCS>
+    <CR>
      []
 """
 
 
-def AllModules():
+def AllModules(type):
 	# Break the design into modules
 	modules = []
 	
 	y = 0
-	for line in SHIP_DESIGN.split("\n"):
+	for line in SHIP_DESIGN[type].split("\n"):
 		x = 0
 		for char in line:
 			if char != " ":

@@ -5,28 +5,39 @@ import HUD
 import Scalar
 import Vector
 
-def CalculatePowerLevelForSmoothApproach(distance, currentSpeed, maxPositiveAcceleration, maxNegativeAcceleration):
+def CalculatePowerLevelForSmoothApproach(distance, currentSpeed, maxPositiveAcceleration, maxNegativeAcceleration, log=False):
 	if abs(distance) < 0.000001:
 		return 0.0
 
-	if abs(distance) < abs(currentSpeed * 4.0):
-		return 0.0
+	#if distance < 0 and abs(distance) < abs(currentSpeed * 4.0):
+	#	return 0.0
 
 	targetAcceleration = -(currentSpeed**2) / (2*distance)
 	maxAppropriateAcceleration = maxNegativeAcceleration if distance < 0 else maxPositiveAcceleration
 	maxAppropriateBraking = maxPositiveAcceleration if distance < 0 else maxNegativeAcceleration
 	
 	info = "[ Distance = %07.2f, Speed = %.5f, Target Acc = %.5f, Max Braking = %.5f ]" % (distance, currentSpeed, targetAcceleration, maxAppropriateBraking)
+	
+	if log:
+		print info, 
 
 	# Moving away from the target - use full power towards it
 	if Scalar.Sign(currentSpeed) != Scalar.Sign(distance):
+		if log:
+			print "BURN (moving away)"
+	
 		return 1.0 * Scalar.Sign(distance)
 	
 	# We have lots of time to brake, so let's accelerate instead
 	elif abs(targetAcceleration) < abs(maxAppropriateBraking * 0.75):
+		if log:
+			print "BURN (have time)"
+	
 		return 1.0 * Scalar.Sign(distance)
 		
 	# We should brake now!
+	if log:
+		print "BRAKE"
 	return abs(targetAcceleration / maxAppropriateBraking) * -Scalar.Sign(distance)
 	
 class Analysis:
@@ -60,6 +71,44 @@ class Autopilot:
 		self.RotateToFaceTarget()
 		
 		self.ThrustToTargetRadius()
+		
+		self.FireWeaponsIfPossible()
+	
+	# ========== HIGH-LEVEL CONTROLS =============
+	def RotateToFaceTarget(self):
+		angularDistance = Vector.Direction(self.target.Vector())
+		angularSpeed = self.ship.Spin()
+		
+		power = CalculatePowerLevelForSmoothApproach(angularDistance, angularSpeed,
+													 self.analysis.maxPositiveDizzy, 
+											 	     self.analysis.maxNegativeDizzy,
+											 	     log=False)
+ 	     
+		self.PowerEngines(power, self.analysis.positiveDizzyEngines, self.analysis.negativeDizzyEngines)
+	
+	
+	def ThrustToTargetRadius(self):
+		distance = Vector.Magnitude(self.target.Vector()) - 400
+		speed = Vector.ScalarProjection(self.target.Velocity(), [-1, 0])
+		
+		maxTowardAcceleration = self.analysis.maxForwardAcceleration
+		maxAwayAcceleration = self.analysis.maxReverseAcceleration
+		
+		#maxTowardAcceleration = Vector.ScalarProjection([0, self.analysis.maxForwardAcceleration], self.target.Vector())
+		#maxAwayAcceleration = Vector.ScalarProjection([0, self.analysis.maxReverseAcceleration], self.target.Vector())
+		
+		power = CalculatePowerLevelForSmoothApproach(distance, speed, 
+													 maxTowardAcceleration, 
+													 maxAwayAcceleration,
+													 log=False)
+
+		self.PowerEngines(power, self.analysis.forwardEngines, self.analysis.reverseEngines)
+		
+	def FireWeaponsIfPossible(self):
+		if abs(Vector.Direction(self.target.Vector())) < 0.5:
+			self.FireAllWeapons()
+
+	# =============== LOW-LEVEL COMMANDS ===============
 	
 	def ClearEngines(self):
 		for e in self.ship.Engines():
@@ -71,28 +120,11 @@ class Autopilot:
 			
 		for e in negativeEngines:
 			e.SetPower(-power)
+			
+	def FireAllWeapons(self):
+		for w in self.ship.Weapons():
+			w.Fire()
 
-	def RotateToFaceTarget(self):
-		angularDistance = Vector.Direction(self.target.Vector())
-		angularSpeed = self.ship.Spin()
-		
-		power = CalculatePowerLevelForSmoothApproach(angularDistance, angularSpeed,
-													 self.analysis.maxPositiveDizzy, 
-											 	     self.analysis.maxNegativeDizzy)
- 	     
-		self.PowerEngines(power, self.analysis.positiveDizzyEngines, self.analysis.negativeDizzyEngines)
-	
-	
-	def ThrustToTargetRadius(self):
-		distance = Vector.Magnitude(self.target.Vector()) - 300
-		speed = Vector.ScalarProjection(self.target.Velocity(), [0, 1])
-		
-		maxTowardAcceleration = Vector.ScalarProjection([0, self.analysis.maxForwardAcceleration], self.target.Vector())
-		maxAwayAcceleration = Vector.ScalarProjection([0, self.analysis.maxForwardAcceleration], self.target.Vector())
-		
-		power = CalculatePowerLevelForSmoothApproach(distance, speed, maxTowardAcceleration, maxAwayAcceleration)
-
-		self.PowerEngines(power, self.analysis.forwardEngines, self.analysis.reverseEngines)
 			
 		
 		

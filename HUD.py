@@ -27,8 +27,12 @@ def DisplayVector(vector, color=wx.RED, scale=1, position=[0, 0]):
 
 def Draw(dc):
 	
+	def widthOfVector(id):
+		return 1 + (id * 2)
+	
+	vectorId = 0
 	for startPoint, endPoint, t1, t2, color in vectorsToDraw:
-		dc.SetPen(wx.Pen(color, 2))
+		dc.SetPen(wx.Pen(color, widthOfVector(len(vectorsToDraw) - vectorId) ))
 		
 		x1, y1 = startPoint
 		x2, y2 = endPoint
@@ -40,6 +44,8 @@ def Draw(dc):
 
 		t2x, t2y = t2
 		dc.DrawLine(t2x, 720-t2y, x2, 720-y2)
+		
+		vectorId += 1
 	
 	del vectorsToDraw[:]
 	

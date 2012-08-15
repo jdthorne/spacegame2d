@@ -3,16 +3,22 @@
 import HUD
 import Ship
 import wx
+import World
 
 app = wx.App(False)
 frame = wx.Frame(None, title="Starsplosion", size=(1280, 720))
 panel = wx.Panel(frame)
 
-all = []
+world = World.World()
 
 def SimulateAll(event=None):
-	for object in all:
-		object.Simulate()
+	for object in world.all[:]:
+	
+		if object.destroyed:
+			world.RemoveObject(object)
+			
+		else:
+			object.Simulate()
 	
 	panel.Refresh()
 
@@ -20,16 +26,13 @@ def PaintAll(event):
 	dc = wx.PaintDC(event.GetEventObject())
 	dc.Clear()
 	
-	for object in all:
+	for object in world.all:
 		object.Draw(dc)
 		
 	HUD.Draw(dc)
 		
-def Scan():
-	return all
-	
-all.append(Ship.Ship( [1280/4, 720/2], scanner=Scan, powered=True ))
-all.append(Ship.Ship( [1280*(3.0/4), 720/2] ))
+world.AddObject(Ship.Ship( 0, [1280/4, 720/2], world ))
+world.AddObject(Ship.Ship( 1, [1280*(3.0/4), 720/2], world ))
 
 panel.Bind(wx.EVT_PAINT, PaintAll)
 		

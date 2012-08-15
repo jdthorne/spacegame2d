@@ -34,9 +34,8 @@ class TargetWrapper:
 
 	def Velocity(self):
 		relativeVelocity = Vector.Offset(self._target.velocity, self._ship.velocity)
-		return Vector.Rotate(relativeVelocity, self._ship.rotation)
+		return Vector.Rotate(relativeVelocity, -self._ship.rotation)
 
-		
 class SensorWrapper:
 	def __init__(self, realShip):
 		self._ship = realShip
@@ -44,10 +43,18 @@ class SensorWrapper:
 	def Scan(self):
 		return [ TargetWrapper(self._ship, t) for t in self._ship.ScanForTargets() ]
 
+class WeaponWrapper:
+	def __init__(self, realWeapon):
+		self._weapon = realWeapon
+		
+	def Fire(self):
+		self._weapon.Fire()
+
 class ShipWrapper:
 	def __init__(self, realShip):
 		self._ship = realShip
 		self._engines = [ EngineWrapper(e) for e in self._ship.engines ]
+		self._weapons = [ WeaponWrapper(w) for w in self._ship.weapons ]
 		
 	def Spin(self):
 		return self._ship.spin
@@ -63,4 +70,7 @@ class ShipWrapper:
 		
 	def Mass(self):
 		return self._ship.Mass()
+		
+	def Weapons(self):
+		return self._weapons
 		
