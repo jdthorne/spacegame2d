@@ -67,10 +67,10 @@ class Engine(Module):
 	def Simulate(self):
 		self.power = Scalar.Bound(0, self.power, 1)
 	
-		self.parent.ApplyLocalForce(self.CurrentThrust(), self.position)
+		self.parent.ApplyLocalForce(self.CurrentThrust(), Vector.Scale(self.position, MODULE_SIZE))
 		
 	def Dizzy(self):
-		return self.parent.CalculateDeltaSpinDueToLocalForce(self.thrustVector, self.position)
+		return self.parent.CalculateDeltaSpinDueToLocalForce(self.thrustVector, Vector.Scale(self.position, MODULE_SIZE))
 		
 	def Acceleration(self):
 		return Vector.Scale(self.thrustVector, 1.0 / self.parent.Mass())
@@ -143,15 +143,20 @@ class Bullet(Physics.PointBody):
 		self.deflectorHold = True
 		self.velocity = velocity
 		self.owner = owner
+		self.life = 150
 		
 	def Mass(self):
 		return 1.0
 		
 	def Simulate(self):
+		self.life -= 1
 		Physics.PointBody.Simulate(self)
 		
 		if Vector.Distance(self.position, self.owner.position) >= 200:
 			self.deflectorHold = False
+			
+		if self.life < 0:
+			self.destroyed = True
 	
 	def Draw(self, dc):
 		x, y = self.position
@@ -161,7 +166,12 @@ class Bullet(Physics.PointBody):
 		dc.DrawCircle(x, 720-y, 5)
 		
 	def SolidFor(self, object):
-		if self.deflectorHold and object == self.owner:
+		vectorTowardObject = Vector.Offset(object.position, self.position)
+		
+		relativeVelocity = Vector.Offset(object.velocity, self.velocity)
+		speedTowardObject = Vector.ScalarProjection(relativeVelocity, vectorTowardObject)
+		
+		if speedTowardObject > 0:
 			return False
 		
 		return True
@@ -195,6 +205,10 @@ class Deflector(Module):
 		Module.__init__(self, parent, position, 15, wx.Colour(0, 255, 0))
 	
 	def Simulate(self):
+		if self.availablePower < 0.9:
+			self.availablePower += 0.01
+		
+		
 		for object in self.parent.world.all[:]:
 			if object == self.parent:
 				continue
@@ -214,7 +228,7 @@ class Deflector(Module):
 			object.ApplyForce(deflectorForce)
 			
 			totalForce = Vector.Magnitude(deflectorForce)
-			self.availablePower -= (totalForce * 0.01)
+			self.availablePower -= (totalForce * 0.02)
 			
 	def Draw(self, dc):
 		Module.Draw(self, dc)
@@ -300,7 +314,8 @@ class Ship(Physics.RigidBody):
 				continue
 			
 			for module in self.modules[:]:
-				if abs(Vector.Magnitude(Vector.Offset(item.position, module.AbsolutePosition()))) < (2.0 * Vector.Magnitude(item.velocity)):
+				radius = Scalar.Bound(MODULE_SIZE/2, (2.0 * Vector.Magnitude(item.velocity)), MODULE_SIZE * 10)
+				if abs(Vector.Magnitude(Vector.Offset(item.position, module.AbsolutePosition()))) < radius:
 					item.destroyed = True
 					self.modules.remove(module)
 					

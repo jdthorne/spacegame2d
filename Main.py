@@ -4,6 +4,7 @@ import HUD
 import Ship
 import wx
 import World
+import Vector
 
 app = wx.App(False)
 frame = wx.Frame(None, title="Starsplosion", size=(1280, 720))
@@ -14,7 +15,7 @@ world = World.World()
 def SimulateAll(event=None):
 	for object in world.all[:]:
 	
-		if object.destroyed:
+		if object.destroyed or Vector.Magnitude(object.position) > 1500:
 			world.RemoveObject(object)
 			
 		else:
