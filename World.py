@@ -1,7 +1,8 @@
-
+import random
 
 class World:
 	def __init__(self):
+		random.seed(500)
 		self.all = []
 
 	def Scan(self):
@@ -13,6 +14,9 @@ class World:
 	def RemoveObject(self, object):
 		self.all.remove(object)
 		
+	def RandomValue(self, a, b):
+		return random.randint(a, b)
+		
 class WorldItem:
 	destroyed = False
 	
@@ -23,4 +27,7 @@ class WorldItem:
 		pass
 		
 	def SolidFor(self, object):
+		return True
+		
+	def DeflectedBy(self, object):
 		return True

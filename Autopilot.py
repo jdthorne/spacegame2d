@@ -60,13 +60,15 @@ class Autopilot:
 		self.target = None
 		self.ship = ship
 		
+		self.engineCount = len(self.ship.Engines())
 		self.analysis = Analysis(self.ship)
 		
-	def __call__(self):
+	def Run(self):		
+		if self.engineCount != len(self.ship.Engines()):
+			self.analysis = Analysis(self.ship)
+			
 		self.target = self.ship.Sensors().Scan()[0]
-		self.RunAutopilot()
-		
-	def RunAutopilot(self):		
+
 		self.ClearEngines()
 		self.RotateToFaceTarget()
 		
@@ -93,9 +95,6 @@ class Autopilot:
 		
 		maxTowardAcceleration = self.analysis.maxForwardAcceleration
 		maxAwayAcceleration = self.analysis.maxReverseAcceleration
-		
-		#maxTowardAcceleration = Vector.ScalarProjection([0, self.analysis.maxForwardAcceleration], self.target.Vector())
-		#maxAwayAcceleration = Vector.ScalarProjection([0, self.analysis.maxReverseAcceleration], self.target.Vector())
 		
 		power = CalculatePowerLevelForSmoothApproach(distance, speed, 
 													 maxTowardAcceleration, 

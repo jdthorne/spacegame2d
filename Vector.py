@@ -8,6 +8,9 @@ def Sum(vector):
 	add = lambda a, b: a + b + 0.0
 	return reduce(add, vector)
 
+def Distance(a, b):
+	return Magnitude(Offset(a, b))
+
 def Add(a, b):
 	return [ a[i] + b[i] + 0.0 for i in range(len(a)) ]
 	

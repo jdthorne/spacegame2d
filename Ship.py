@@ -50,7 +50,7 @@ class FlightComputer(Module):
 		if self.autopilot == None:
 			self.autopilot = Autopilot.Autopilot(ShipControls.ShipWrapper(self.parent))
 
-		self.autopilot()
+		self.autopilot.Run()
 
 class Engine(Module):
 	def __init__(self, parent, position, thrustVector):
@@ -67,10 +67,10 @@ class Engine(Module):
 	def Simulate(self):
 		self.power = Scalar.Bound(0, self.power, 1)
 	
-		self.parent.ApplyForce(self.CurrentThrust(), self.position)
+		self.parent.ApplyLocalForce(self.CurrentThrust(), self.position)
 		
 	def Dizzy(self):
-		return self.parent.CalculateDeltaSpinDueToForce(self.thrustVector, self.position)
+		return self.parent.CalculateDeltaSpinDueToLocalForce(self.thrustVector, self.position)
 		
 	def Acceleration(self):
 		return Vector.Scale(self.thrustVector, 1.0 / self.parent.Mass())
@@ -102,23 +102,31 @@ class Engine(Module):
 
 		Module.Draw(self, dc)
 
-class Explosion(World.WorldItem):
-	def __init__(self, position, velocity):
+class Explosion(Physics.PointBody):
+	def __init__(self, position, velocity, size):
+		Physics.PointBody.__init__(self, position)
+		
 		self.position = position
 		self.velocity = velocity
+		self.size = size
 		
-		self.life = 50
+		self.initialLife = size
+		self.life = size
 	
 	def Simulate(self):
-		self.position = Vector.Add(self.position, self.velocity)
+		Physics.PointBody.Simulate(self)
+
 		self.life -= 1
 		
 		if self.life < 5:
 			self.destroyed = True
+			
+	def Mass(self):
+		return 50000
 		
 	def Draw(self, dc):
 		x, y = self.position
-		alpha = int(255 * (self.life / 50.0))
+		alpha = int(200 * ((self.life+0.0) / self.initialLife))
 		
 		dc.SetPen(wx.Pen(wx.BLACK, 0))
 		dc.SetBrush(wx.Brush(wx.Colour(255, 128, 0, alpha)))
@@ -128,14 +136,22 @@ class Explosion(World.WorldItem):
 		return False
 		
 
-class Bullet(World.WorldItem):
+class Bullet(Physics.PointBody):
 	def __init__(self, position, velocity, owner):
-		self.position = position
+		Physics.PointBody.__init__(self, position)
+		
+		self.deflectorHold = True
 		self.velocity = velocity
 		self.owner = owner
-
+		
+	def Mass(self):
+		return 1.0
+		
 	def Simulate(self):
-		self.position = Vector.Add(self.position, self.velocity)
+		Physics.PointBody.Simulate(self)
+		
+		if Vector.Distance(self.position, self.owner.position) >= 200:
+			self.deflectorHold = False
 	
 	def Draw(self, dc):
 		x, y = self.position
@@ -145,36 +161,80 @@ class Bullet(World.WorldItem):
 		dc.DrawCircle(x, 720-y, 5)
 		
 	def SolidFor(self, object):
-		return (object != self.owner)
+		if self.deflectorHold and object == self.owner:
+			return False
+		
+		return True
 
 
 class Railgun(Module):
 	def __init__(self, parent, position):
-		self.recharge = 0
 		Module.__init__(self, parent, position, 5, wx.Colour(255, 0, 255))
+		self.recharge = 0
 		
 	def Fire(self):
 		if self.recharge > 0:
 			return
 			
-		self.recharge = 10
+		self.recharge = self.parent.world.RandomValue(15, 45)
 		
-		offset = Vector.Scale(Vector.Rotate(self.position, self.parent.rotation), MODULE_SIZE)
+		bulletStart = Vector.Add(self.position, [1, 0])
+		offset = Vector.Scale(Vector.Rotate(bulletStart, self.parent.rotation), MODULE_SIZE)
 		position = Vector.Add(self.parent.position, offset)
 		
-		self.parent.world.AddObject(Bullet(position, Vector.Rotate([20, 0], self.parent.rotation), self.parent))
+		self.parent.world.AddObject(Bullet(position, Vector.Rotate([MODULE_SIZE, 0], self.parent.rotation), self.parent))
 	
 	def Simulate(self):
 		if self.recharge > 0:
 			self.recharge -= 1
+			
+class Deflector(Module):
+	def __init__(self, parent, position):
+		self.range = 200
+		self.availablePower = 1.0
+		Module.__init__(self, parent, position, 15, wx.Colour(0, 255, 0))
+	
+	def Simulate(self):
+		for object in self.parent.world.all[:]:
+			if object == self.parent:
+				continue
+				
+			if not object.SolidFor(self.parent):
+				continue
+			
+			distance = Vector.Distance(object.position, self.AbsolutePosition())
+			if distance > self.range or distance < 1:
+				continue
+			
+			power = (self.range - distance + 0.0) / self.range
+			power = power * self.availablePower
+			power = power ** 2
+			towardsObject = Vector.Normalize(Vector.Offset(object.position, self.parent.position))
+			deflectorForce = Vector.Scale(towardsObject, power * 3)
+			object.ApplyForce(deflectorForce)
+			
+			totalForce = Vector.Magnitude(deflectorForce)
+			self.availablePower -= (totalForce * 0.01)
+			
+	def Draw(self, dc):
+		Module.Draw(self, dc)
+		
+		x, y = self.AbsolutePosition()
+		c = int(255 * self.availablePower)
+		
+		dc.SetPen(wx.Pen(wx.BLACK, 0))
+		dc.SetBrush(wx.Brush(wx.Colour(255 - c, 128, c, 50)))
+		dc.DrawCircle(x, 720-y, 50)		
+			
 
-class Ship(Physics.PhysicsBody):
+class Ship(Physics.RigidBody):
 	def __init__(self, shipType, position, world):
-		Physics.PhysicsBody.__init__(self, position)
+		Physics.RigidBody.__init__(self, position)
 		
 		self.world = world
 		self.rotation = (math.pi/2) + (math.pi * shipType)
 		
+		self.flightComputer = None
 		self.modules = []
 		
 		for moduleType, x, y in ShipDesign.AllModules(shipType):
@@ -182,6 +242,8 @@ class Ship(Physics.PhysicsBody):
 			
 			if moduleType == "C":
 				module = FlightComputer(self, [x, y])
+				self.flightComputer = module
+				
 			elif moduleType == "S":
 				module = Structure(self, [x, y])
 			elif moduleType == "<":
@@ -194,6 +256,8 @@ class Ship(Physics.PhysicsBody):
 				module = Engine(self, [x, y], [1, 0])
 			elif moduleType == "R":
 				module = Railgun(self, [x, y])
+			elif moduleType == "D":
+				module = Deflector(self, [x, y])
 			
 			self.modules.append(module)
 			
@@ -224,8 +288,7 @@ class Ship(Physics.PhysicsBody):
 			m.Draw(dc)
 		
 	def Simulate(self):
-		self.position = Vector.Add(self.position, self.velocity)
-		self.rotation = (self.rotation + self.spin) % (2 * math.pi)
+		Physics.RigidBody.Simulate(self)
 		
 		HUD.frameOfReference = (self.position, self.rotation)
 		
@@ -237,10 +300,15 @@ class Ship(Physics.PhysicsBody):
 				continue
 			
 			for module in self.modules[:]:
-				if abs(Vector.Magnitude(Vector.Offset(item.position, module.AbsolutePosition()))) < 5:
+				if abs(Vector.Magnitude(Vector.Offset(item.position, module.AbsolutePosition()))) < (2.0 * Vector.Magnitude(item.velocity)):
 					item.destroyed = True
 					self.modules.remove(module)
 					
-					self.world.AddObject(Explosion(module.AbsolutePosition(), self.velocity))
+					self.world.AddObject(Explosion(module.AbsolutePosition(), self.velocity, 50))
+					
+		if not (self.flightComputer in self.modules):
+			self.world.AddObject(Explosion(module.AbsolutePosition(), self.velocity, 150))
+			self.destroyed = True
+
 					
 					

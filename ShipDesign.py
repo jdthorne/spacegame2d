@@ -4,17 +4,19 @@
 SHIP_DESIGN = {}
 
 SHIP_DESIGN[0] = """\
-     [R]
-    [SSR]
-   <SSSCRS>
-    [SSR]
-     [R]
+    [RRR]
+    [DD]
+   <CRSS>
+    [DD]
+    [RRR]
 """
 
 SHIP_DESIGN[1] = """\
-     []
-    <CR>
-     []
+    RRR
+    [D]
+    <CD>
+    [D]
+    RRR
 """
 
 
