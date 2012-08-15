@@ -54,7 +54,7 @@ class FlightComputer(Module):
 
 class Engine(Module):
 	def __init__(self, parent, position, thrustVector):
-		Module.__init__(self, parent, position, 5, wx.Colour(64, 64, 64))
+		Module.__init__(self, parent, position, 3, wx.Colour(64, 64, 64))
 		
 		self.thrustVector = thrustVector
 		
