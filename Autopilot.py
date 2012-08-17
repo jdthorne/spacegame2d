@@ -81,14 +81,11 @@ class Autopilot:
    
    # ========== HIGH-LEVEL CONTROLS =============
    def acquireTarget(self):
-      if self.target != None and (not self.target.destroyed):
-         return
-         
       closestTarget = None
       closestRange = 0
       for target in self.ship.sensors().scan():
          if (target.combatTeam() != -1) and (target.combatTeam() != self.ship.combatTeam()):
-            range = abs(Vector.direction(target.vector()))
+            range = (abs(Vector.direction(target.vector())) * 600) + abs(Vector.magnitude(target.vector()))
          
             if (closestTarget == None) or (range < closestRange):
                closestRange = range

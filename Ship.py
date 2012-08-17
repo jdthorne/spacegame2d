@@ -72,6 +72,7 @@ class Explosion(Physics.PointBody):
    def __init__(self, position, velocity, size):
       Physics.PointBody.__init__(self, position)
       
+      self.exciting = True
       self.position = position
       self.velocity = velocity
       self.size = size
@@ -193,6 +194,7 @@ class Ship(Physics.RigidBody):
       Physics.RigidBody.__init__(self, position)
       
       self.combatTeam = shipType
+      self.exciting = True
       self.world = world
       self.rotation = (math.pi/2) + (math.pi * shipType)
       

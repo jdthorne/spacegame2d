@@ -24,21 +24,14 @@ class World:
       return random.randint(a, b)
       
    def hasRemainingExcitement(self):
-      combatTeams = []
       for a in self.all[:]:
-         name = a.__class__.__name__
-         
-         if name == "Explosion":
+         if a.exciting:
             return True
-            
-         if name == "Ship":
-            if not a.combatTeam in combatTeams:
-               combatTeams.append(a)
-               
-            if len(combatTeams) > 1:
-               return True
+      
+      return False
       
 class WorldItem:
+   exciting = False
    destroyed = False
    combatTeam = -1
       

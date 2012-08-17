@@ -42,7 +42,7 @@ for f in os.listdir("."):
       usedSprites[name] = []
 
 worldPosition = (200, 200)
-worldScale = 0.35
+worldScale = 1.0
 
 batch = pyglet.graphics.Batch()
 
@@ -53,22 +53,33 @@ def orientWorld(world):
    xMin, yMin = (9999999, 9999999)
    xMax, yMax = (0, 0)
    for o in world.all[:]:
-      x, y = o.position
-      if x < xMin:
-         xMin = x
-      elif x > xMax:
-         xMax = x
+   	if o.exciting:
+			x, y = o.position
+			if x < xMin:
+				xMin = x
+			if x > xMax:
+				xMax = x
+				
+			if y < yMin:
+				yMin = y
+			if y > yMax:
+				yMax = y
          
-      if y < yMin:
-         yMin = y
-      elif y > yMax:
-         yMax = y
-         
+   padding = 400
+   xMin -= padding
+   yMin -= padding
+   xMax += padding
+   yMax += padding
+   
+   xScale = 1280 / (xMax - xMin)
+   yScale = 720 / (yMax - yMin)
+   worldScale = (0.9 * worldScale) + (0.1 * min(2.0, xScale, yScale))
+   
    minPos = (xMin, yMin)
    maxPos = (xMax, yMax)
-   center = Vector.scale(Vector.add(minPos, maxPos), 0.5)
+   center = Vector.scale(Vector.add(minPos, maxPos), -0.5)
 
-   worldPosition = center
+   worldPosition = Vector.add(Vector.scale(worldPosition, 0.9), Vector.scale(center, 0.1))
       
 
 @Timing.timedFunction("Draw/Free")
@@ -107,7 +118,7 @@ def findSprite(name):
 def drawSprite(name, position, rotation=0.0, scale=1.0, alpha=1.0):
    sprite = findSprite(name)
    
-   x, y = Vector.scale(Vector.add(position, worldPosition), worldScale)
+   x, y = Vector.add(Vector.scale(Vector.add(position, worldPosition), worldScale), (1280/2, 720/2))
    sprite.set_position(x, y)
       
    sprite.rotation = -180 * (rotation / math.pi)
@@ -194,12 +205,12 @@ objectTypes["Ship"] = drawShip
 def renderObject(obj):
    name = obj.__class__.__name__
    
-   w, h = Vector.scale((1280, 720), 1.0/worldScale)
-   x, y = obj.position
-   if x < 0 or x > w:
-      return
-   if y < 0 or y > h:
-      return
+   #w, h = Vector.scale((1280, 720), 1.0/worldScale)
+   #x, y = obj.position
+   #if x < 0 or x > w:
+   #   return
+   #if y < 0 or y > h:
+   #   return
    
    if name in objectTypes:
       objectTypes[name](obj)
