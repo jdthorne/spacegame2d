@@ -4,8 +4,9 @@ import math
 import HUD
 import Scalar
 import Vector
+import Timing
 
-def CalculatePowerLevelForSmoothApproach(distance, currentSpeed, maxPositiveAcceleration, maxNegativeAcceleration, log=False):
+def calculatePowerLevelForSmoothApproach(distance, currentSpeed, maxPositiveAcceleration, maxNegativeAcceleration, log=False):
 	if abs(distance) < 0.000001:
 		return 0.0
 
@@ -22,107 +23,131 @@ def CalculatePowerLevelForSmoothApproach(distance, currentSpeed, maxPositiveAcce
 		print info, 
 
 	# Moving away from the target - use full power towards it
-	if Scalar.Sign(currentSpeed) != Scalar.Sign(distance):
+	if Scalar.sign(currentSpeed) != Scalar.sign(distance):
 		if log:
 			print "BURN (moving away)"
 	
-		return 1.0 * Scalar.Sign(distance)
+		return 1.0 * Scalar.sign(distance)
 	
 	# We have lots of time to brake, so let's accelerate instead
 	elif abs(targetAcceleration) < abs(maxAppropriateBraking * 0.75):
 		if log:
 			print "BURN (have time)"
 	
-		return 1.0 * Scalar.Sign(distance)
+		return 1.0 * Scalar.sign(distance)
 		
 	# We should brake now!
 	if log:
 		print "BRAKE"
-	return abs(targetAcceleration / maxAppropriateBraking) * -Scalar.Sign(distance)
+	return abs(targetAcceleration / maxAppropriateBraking) * -Scalar.sign(distance)
 	
 class Analysis:
 	def __init__(self, ship):
-		self.zeroDizzyEngines = [ e for e in ship.Engines() if e.Dizzy() == 0 ]
-		self.positiveDizzyEngines = [ e for e in ship.Engines() if e.Dizzy() > 0 ]
-		self.negativeDizzyEngines = [ e for e in ship.Engines() if e.Dizzy() < 0 ]
+		self.zeroDizzyEngines = [ e for e in ship.engines() if e.dizzy() == 0 ]
+		self.positiveDizzyEngines = [ e for e in ship.engines() if e.dizzy() > 0 ]
+		self.negativeDizzyEngines = [ e for e in ship.engines() if e.dizzy() < 0 ]
 	
-		self.maxPositiveDizzy = Vector.Sum([ e.Dizzy() for e in self.positiveDizzyEngines ])
-		self.maxNegativeDizzy = Vector.Sum([ e.Dizzy() for e in self.positiveDizzyEngines ])
+		self.maxPositiveDizzy = Vector.sum([ e.dizzy() for e in self.positiveDizzyEngines ])
+		self.maxNegativeDizzy = Vector.sum([ e.dizzy() for e in self.positiveDizzyEngines ])
 		
-		self.forwardEngines = [ e for e in self.zeroDizzyEngines if e.ThrustVector()[0] > 0 ]
-		self.reverseEngines = [ e for e in self.zeroDizzyEngines if e.ThrustVector()[0] < 0 ]
+		self.forwardEngines = [ e for e in self.zeroDizzyEngines if e.thrustVector()[0] > 0 ]
+		self.reverseEngines = [ e for e in self.zeroDizzyEngines if e.thrustVector()[0] < 0 ]
 		
-		self.maxForwardAcceleration = Vector.Sum([ e.Acceleration()[0] for e in self.forwardEngines ])
-		self.maxReverseAcceleration = Vector.Sum([ e.Acceleration()[0] for e in self.reverseEngines ])
+		self.maxForwardAcceleration = Vector.sum([ e.acceleration()[0] for e in self.forwardEngines ])
+		self.maxReverseAcceleration = Vector.sum([ e.acceleration()[0] for e in self.reverseEngines ])
 			
 class Autopilot:
 	def __init__(self, ship):
 		self.target = None
 		self.ship = ship
 		
-		self.engineCount = len(self.ship.Engines())
+		self.weaponsEngaged = False
+		self.engineCount = len(self.ship.engines())
 		self.analysis = Analysis(self.ship)
 		
-	def Run(self):		
-		if self.engineCount != len(self.ship.Engines()):
+	@Timing.timedFunction("Simulate/Ship/Autopilot/Run")
+	def run(self):		
+		if self.engineCount != len(self.ship.engines()):
 			self.analysis = Analysis(self.ship)
-			
-		self.target = self.ship.Sensors().Scan()[0]
+		
+		self.clearEngines()
 
-		self.ClearEngines()
-		self.RotateToFaceTarget()
+		self.acquireTarget()
 		
-		self.ThrustToTargetRadius()
-		
-		self.FireWeaponsIfPossible()
+		if self.target != None:
+			self.rotateToFaceTarget()
+			self.thrustToTargetRadius()
+			self.fireWeaponsIfPossible()
 	
 	# ========== HIGH-LEVEL CONTROLS =============
-	def RotateToFaceTarget(self):
-		angularDistance = Vector.Direction(self.target.Vector())
-		angularSpeed = self.ship.Spin()
+	def acquireTarget(self):
+		if self.target != None and (not self.target.destroyed):
+			return
+			
+		closestTarget = None
+		closestRange = 0
+		for target in self.ship.sensors().scan():
+			if (target.combatTeam() != -1) and (target.combatTeam() != self.ship.combatTeam()):
+				range = abs(Vector.direction(target.vector()))
+			
+				if (closestTarget == None) or (range < closestRange):
+					closestRange = range
+					closestTarget = target
+			
+		self.target = closestTarget
+	
+	def rotateToFaceTarget(self):
+		angularDistance = Vector.direction(self.target.vector())
+		angularSpeed = self.ship.spin()
 		
-		power = CalculatePowerLevelForSmoothApproach(angularDistance, angularSpeed,
+		power = calculatePowerLevelForSmoothApproach(angularDistance, angularSpeed,
 													 self.analysis.maxPositiveDizzy, 
 											 	     self.analysis.maxNegativeDizzy,
 											 	     log=False)
  	     
-		self.PowerEngines(power, self.analysis.positiveDizzyEngines, self.analysis.negativeDizzyEngines)
+		self.powerEngines(power, self.analysis.positiveDizzyEngines, self.analysis.negativeDizzyEngines)
 	
 	
-	def ThrustToTargetRadius(self):
-		distance = Vector.Magnitude(self.target.Vector()) - 400
-		speed = Vector.ScalarProjection(self.target.Velocity(), [-1, 0])
+	def thrustToTargetRadius(self):
+		distance = Vector.magnitude(self.target.vector()) - 400
+		speed = Vector.scalarProjection(self.target.velocity(), [-1, 0])
 		
 		maxTowardAcceleration = self.analysis.maxForwardAcceleration
 		maxAwayAcceleration = self.analysis.maxReverseAcceleration
 		
-		power = CalculatePowerLevelForSmoothApproach(distance, speed, 
+		power = calculatePowerLevelForSmoothApproach(distance, speed, 
 													 maxTowardAcceleration, 
 													 maxAwayAcceleration,
 													 log=False)
 
-		self.PowerEngines(power, self.analysis.forwardEngines, self.analysis.reverseEngines)
+		self.powerEngines(power, self.analysis.forwardEngines, self.analysis.reverseEngines)
 		
-	def FireWeaponsIfPossible(self):
-		if abs(Vector.Direction(self.target.Vector())) < 0.5:
-			self.FireAllWeapons()
+	def fireWeaponsIfPossible(self):
+		if abs(Vector.direction(self.target.vector())) < 0.1:
+			self.weaponsEngaged = True
+
+		if abs(Vector.direction(self.target.vector())) > 0.3:
+			self.weaponsEngaged = False
+			
+		if self.weaponsEngaged:
+			self.fireAllWeapons()
 
 	# =============== LOW-LEVEL COMMANDS ===============
 	
-	def ClearEngines(self):
-		for e in self.ship.Engines():
-			e.SetPower(0)
+	def clearEngines(self):
+		for e in self.ship.engines():
+			e.setPower(0)
 			
-	def PowerEngines(self, power, positiveEngines, negativeEngines):
+	def powerEngines(self, power, positiveEngines, negativeEngines):
 		for e in positiveEngines:
-			e.SetPower(power)
+			e.setPower(power)
 			
 		for e in negativeEngines:
-			e.SetPower(-power)
+			e.setPower(-power)
 			
-	def FireAllWeapons(self):
-		for w in self.ship.Weapons():
-			w.Fire()
+	def fireAllWeapons(self):
+		for w in self.ship.weapons():
+			w.fire()
 
 			
 		

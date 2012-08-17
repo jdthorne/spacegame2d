@@ -1,45 +1,22 @@
-#!/opt/local/bin/python
+#!/usr/bin/python
 
+import OpenGLCore
 import HUD
 import Ship
-import wx
 import World
 import Vector
-
-app = wx.App(False)
-frame = wx.Frame(None, title="Starsplosion", size=(1280, 720))
-panel = wx.Panel(frame)
+import Timing
 
 world = World.World()
+world.addObject(Ship.Ship( 0, (1280*0.5, 720.0*1.5), world ))
+world.addObject(Ship.Ship( 0, (1280*1.0, 720.0*1.0), world ))
+world.addObject(Ship.Ship( 0, (1280*1.5, 720.0*0.5), world ))
+world.addObject(Ship.Ship( 0, (1280*2.0, 720.0*1.0), world ))
+#world.addObject(Ship.Ship( 0, (1280*1.5, 720.0*0.25), world ))
 
-def SimulateAll(event=None):
-	for object in world.all[:]:
-	
-		if object.destroyed or Vector.Magnitude(object.position) > 1500:
-			world.RemoveObject(object)
-			
-		else:
-			object.Simulate()
-	
-	panel.Refresh()
+world.addObject(Ship.Ship( 1, (1280*1.5, 720.0*2.0), world ))
 
-def PaintAll(event):
-	dc = wx.PaintDC(event.GetEventObject())
-	dc.Clear()
-	
-	for object in world.all:
-		object.Draw(dc)
-		
-	HUD.Draw(dc)
-		
-world.AddObject(Ship.Ship( 0, [1280/4, 720/2], world ))
-world.AddObject(Ship.Ship( 1, [1280*(3.0/4), 720/2], world ))
 
-panel.Bind(wx.EVT_PAINT, PaintAll)
-		
-timer = wx.Timer(None)
-timer.Bind(wx.EVT_TIMER, SimulateAll)
-timer.Start(50)
-		
-frame.Show(True)
-app.MainLoop()
+OpenGLCore.runApplication(world)
+
+Timing.printAll()

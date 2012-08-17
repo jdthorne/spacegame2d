@@ -6,49 +6,55 @@ class EngineWrapper:
 	def __init__(self, realEngine):
 		self._engine = realEngine
 	
-	def Power(self):
+	def power(self):
 		return self._engine.power
-	def SetPower(self, power):
+	def setPower(self, power):
 		self._engine.power = power
 	
-	def ThrustVector(self):
+	def thrustVector(self):
 		return self._engine.thrustVector
 		
-	def Position(self):
+	def position(self):
 		return self._engine.position
 		
-	def Dizzy(self):
-		return self._engine.Dizzy()
+	def dizzy(self):
+		return self._engine.dizzy()
 		
-	def Acceleration(self):
-		return self._engine.Acceleration()
+	def acceleration(self):
+		return self._engine.acceleration()
 
 class TargetWrapper:
 	def __init__(self, realShip, realTarget):
 		self._ship = realShip
 		self._target = realTarget
 		
-	def Vector(self):
-		offset = Vector.Offset(self._target.position, self._ship.position)
-		return Vector.Rotate(offset, -self._ship.rotation)
+	def vector(self):
+		offset = Vector.offset(self._target.position, self._ship.position)
+		return Vector.rotate(offset, -self._ship.rotation)
 
-	def Velocity(self):
-		relativeVelocity = Vector.Offset(self._target.velocity, self._ship.velocity)
-		return Vector.Rotate(relativeVelocity, -self._ship.rotation)
+	def velocity(self):
+		relativeVelocity = Vector.offset(self._target.velocity, self._ship.velocity)
+		return Vector.rotate(relativeVelocity, -self._ship.rotation)
+		
+	def combatTeam(self):
+		return self._target.combatTeam
+		
+	def destroyed(self):
+		return self._target.distroyed
 
 class SensorWrapper:
 	def __init__(self, realShip):
 		self._ship = realShip
 		
-	def Scan(self):
-		return [ TargetWrapper(self._ship, t) for t in self._ship.ScanForTargets() ]
+	def scan(self):
+		return [ TargetWrapper(self._ship, t) for t in self._ship.scanForTargets() ]
 
 class WeaponWrapper:
 	def __init__(self, realWeapon):
 		self._weapon = realWeapon
 		
-	def Fire(self):
-		self._weapon.Fire()
+	def fire(self):
+		self._weapon.fire()
 
 class ShipWrapper:
 	def __init__(self, realShip):
@@ -56,21 +62,26 @@ class ShipWrapper:
 		self._engines = [ EngineWrapper(e) for e in self._ship.engines ]
 		self._weapons = [ WeaponWrapper(w) for w in self._ship.weapons ]
 		
-	def Spin(self):
+	def spin(self):
 		return self._ship.spin
 		
-	def Velocity(self):
+	def velocity(self):
 		return Vector.Rotate(self._ship.velocity, -self._ship.rotation)
 	
-	def Engines(self):
+	def engines(self):
 		return self._engines
 		
-	def Sensors(self):
+	def sensors(self):
 		return SensorWrapper(self._ship)
 		
-	def Mass(self):
-		return self._ship.Mass()
+	def mass(self):
+		return self._ship.mass()
 		
-	def Weapons(self):
+	def weapons(self):
 		return self._weapons
+		
+	def combatTeam(self):
+		return self._ship.combatTeam
+		
+		
 		

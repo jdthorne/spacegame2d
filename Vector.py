@@ -1,60 +1,84 @@
 
 import math
+import Timing
 
-def Sum(vector):
+@Timing.timedFunction("Vector/Sum")
+def sum(vector):
 	if len(vector) == 0:
 		return 0
 
-	add = lambda a, b: a + b + 0.0
-	return reduce(add, vector)
+	result = 0.0
+	for v in vector:
+		result += v
 
-def Distance(a, b):
-	return Magnitude(Offset(a, b))
+	return result
 
-def Add(a, b):
-	return [ a[i] + b[i] + 0.0 for i in range(len(a)) ]
+@Timing.timedFunction("Vector/Distance")
+def distance(a, b):
+	return math.sqrt( (b[0]-a[0])**2 + (b[1]-a[1])**2 )
+
+@Timing.timedFunction("Vector/Add")
+def add(a, b):
+	return (a[0] + b[0], a[1] + b[1])
 	
-def Multiply(a, b):
-	return [ a[i] * b[i] * 1.0 for i in range(len(a)) ]	
+@Timing.timedFunction("Vector/Multiply")
+def multiply(a, b):
+	return (a[0] * b[0], a[1] * b[1])
 	
-def Scale(vector, scale):
-	return [ element * (scale + 0.0) for element in vector ]
+@Timing.timedFunction("Vector/Scale")
+def scale(vector, scale):
+	return (vector[0] * scale, vector[1] * scale)
 	
-def Offset(a, b):
-	return [ a[i] - b[i] + 0.0 for i in range(len(a)) ]
+@Timing.timedFunction("Vector/Offset")
+def offset(a, b):
+	return (a[0] - b[0], a[1] - b[1])
 	
-def Square(vector):
-	return [ e*e for e in vector ]
+@Timing.timedFunction("Vector/Square")
+def square(vector):
+	return (vector[0]**2, vector[1]**2)
 	
-def Magnitude(vector):
-	return abs(math.sqrt(Sum(Square(vector))))
+@Timing.timedFunction("Vector/Magnitude")
+def magnitude(vector):
+	return math.sqrt(vector[0]*vector[0] + vector[1]*vector[1])
 	
-def Direction(vector):
+@Timing.timedFunction("Vector/Direction")
+def direction(vector):
 	return math.atan2(vector[1], vector[0])
 	
-def ApplyMatrix(vector, matrix):
+@Timing.timedFunction("Vector/ApplyMatrix")
+def applyMatrix(vector, matrix):
 	x, y = vector
 	a, b, c, d = matrix
 	return [ a*x + b*y , c*x + d*y ]
 	
-def RotationMatrix(angle):
+@Timing.timedFunction("Vector/RotationMatric")
+def rotationMatrix(angle):
 	return [ math.cos(angle) , -math.sin(angle) , math.sin(angle), math.cos(angle) ]
 	
-def Rotate(vector, angle):
-	return ApplyMatrix(vector, RotationMatrix(angle))
+@Timing.timedFunction("Vector/Rotate")
+def rotate(vector, angle):
+	return applyMatrix(vector, rotationMatrix(angle))
 	
-def Midpoint(a, b):
-	return [ (a[i] + b[i]) / 2.0 for i in range(len(a)) ]
+@Timing.timedFunction("Vector/Midpoint")
+def midpoint(a, b):
+	return ( (a[0]+b[0])/2.0, (a[1]+b[1])/2.0 )
 	
-def ShortestAngleBetween(a, b):
+@Timing.timedFunction("Vector/ShortestAngle")
+def shortestAngleBetween(a, b):
 	return math.atan2(math.sin(b - a), math.cos(b - a))
-
-def Normalize(vector):
-	return Scale(vector, 1.0 / Magnitude(vector))
 	
-def Dot(a, b):
-	return Sum(Multiply(a, b))
+@Timing.timedFunction("Vector/Normalize")
+def normalize(vector):
+	if magnitude(vector) == 0:
+		return (0, 0)
+		
+	return scale(vector, 1.0 / magnitude(vector))
 	
-def ScalarProjection(a, b):
-	return Dot(a, b) / Magnitude(b)
+@Timing.timedFunction("Vector/Dot")
+def dot(a, b):
+	return sum(multiply(a, b))
+	
+@Timing.timedFunction("Vector/ScalarProject")
+def scalarProjection(a, b):
+	return dot(a, b) / magnitude(b)
 	

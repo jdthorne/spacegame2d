@@ -4,32 +4,41 @@
 SHIP_DESIGN = {}
 
 SHIP_DESIGN[0] = """\
-   
-    []
-     R
-     DRD  
-    <CRRD>
-     DRD  
-     R
-    []
+    [PDP]   
+     [SS]
+      SS
+    PDPDD 
+   <CPPPDD>
+    PDPDD 
+      SS
+     [SS]
+    [PDP]   
+"""
+
+SHIP_DESIGN[0] = """\
+    <>
+     P
+  <DPCD>
+     P
+    <>
 """
 
 SHIP_DESIGN[1] = """\
-    <>
-    S
-    S
-    D    
-   RRRD
-<CSSRRR>
-   RRRD
-    D
-    S
-    S
-    <>
+   <D>
+   <S>
+   <SD>
+   DDPP   
+  SPPPDD
+<CSSPPPSD>
+  SPPPDD
+   DDPP
+   <SD>
+   <S>
+   <D>
 """
 
 
-def AllModules(type):
+def allModules(type):
 	# Break the design into modules
 	modules = []
 	

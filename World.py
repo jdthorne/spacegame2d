@@ -1,33 +1,52 @@
 import random
+import Vector
 
 class World:
 	def __init__(self):
 		random.seed(500)
 		self.all = []
 
-	def Scan(self):
+	def scan(self):
 		return self.all[:]
 		
-	def AddObject(self, object):
+	def addObject(self, object):
 		self.all.append(object)
 		
-	def RemoveObject(self, object):
-		self.all.remove(object)
+	def simulate(self):
+		for object in self.all[:]:
+			if object.destroyed:
+				self.all.remove(object)
+				
+			else:
+				object.simulate()
 		
-	def RandomValue(self, a, b):
+	def randomValue(self, a, b):
 		return random.randint(a, b)
+		
+	def hasRemainingExcitement(self):
+		combatTeams = []
+		for a in self.all[:]:
+			name = a.__class__.__name__
+			
+			if name == "Explosion":
+				return True
+				
+			if name == "Ship":
+				if not a.combatTeam in combatTeams:
+					combatTeams.append(a)
+					
+				if len(combatTeams) > 1:
+					return True
 		
 class WorldItem:
 	destroyed = False
-	
-	def Draw(self):
+	combatTeam = -1
+		
+	def simulate(self):
 		pass
 		
-	def Simulate(self):
-		pass
-		
-	def SolidFor(self, object):
+	def solidFor(self, object):
 		return True
 		
-	def DeflectedBy(self, object):
+	def seflectedBy(self, object):
 		return True

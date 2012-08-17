@@ -1,5 +1,4 @@
 
-import wx
 import math
 
 import Scalar
@@ -8,7 +7,7 @@ import Vector
 frameOfReference = ([0, 0], 0)
 vectorsToDraw = []
 
-def DisplayVector(vector, color=wx.RED, scale=1, position=[0, 0]):
+def displayVector(vector, color=(255,0,0), scale=1, position=[0, 0]):
 	if Vector.Magnitude(vector) == 0:
 		return
 
@@ -25,7 +24,7 @@ def DisplayVector(vector, color=wx.RED, scale=1, position=[0, 0]):
 		
 	vectorsToDraw.append( (startPoint, endPoint, t1, t2, color) )
 
-def Draw(dc):
+def draw(dc):
 	
 	def widthOfVector(id):
 		return 1 + (id * 2)
@@ -48,4 +47,3 @@ def Draw(dc):
 		vectorId += 1
 	
 	del vectorsToDraw[:]
-	

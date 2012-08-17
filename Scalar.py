@@ -1,5 +1,5 @@
 	
-def Sign(number):
+def sign(number):
 	if number > 0:
 		return 1
 	if number < 0:
@@ -7,7 +7,7 @@ def Sign(number):
 		
 	return 0
 
-def Bound(min, number, max):
+def bound(min, number, max):
 	if number < min:
 		return min
 	if number > max:
