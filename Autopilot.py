@@ -43,18 +43,27 @@ def calculatePowerLevelForSmoothApproach(distance, currentSpeed, maxPositiveAcce
    
 class Analysis:
    def __init__(self, ship):
+      self.ship = ship
+      
       self.zeroDizzyEngines = [ e for e in ship.engines() if e.dizzy() == 0 ]
       self.positiveDizzyEngines = [ e for e in ship.engines() if e.dizzy() > 0 ]
       self.negativeDizzyEngines = [ e for e in ship.engines() if e.dizzy() < 0 ]
    
       self.maxPositiveDizzy = Vector.sum([ e.dizzy() for e in self.positiveDizzyEngines ])
       self.maxNegativeDizzy = Vector.sum([ e.dizzy() for e in self.positiveDizzyEngines ])
-      
-      self.forwardEngines = [ e for e in self.zeroDizzyEngines if e.thrustVector()[0] > 0 ]
-      self.reverseEngines = [ e for e in self.zeroDizzyEngines if e.thrustVector()[0] < 0 ]
+
+      self.forwardEngines = [ e for e in ship.engines() if e.thrustVector()[0] > 0 ]
+      self.reverseEngines = [ e for e in ship.engines() if e.thrustVector()[0] < 0 ]
       
       self.maxForwardAcceleration = Vector.sum([ e.acceleration()[0] for e in self.forwardEngines ])
       self.maxReverseAcceleration = Vector.sum([ e.acceleration()[0] for e in self.reverseEngines ])
+   
+   def maxRemainingForwardAcceleration(self):
+      return Vector.sum( [e.acceleration()[0] * (1.0 - e.power()) for e in self.forwardEngines] )
+      
+   def maxRemainingReverseAcceleration(self):
+      return Vector.sum( [e.acceleration()[0] * (1.0 - e.power()) for e in self.reverseEngines] )
+         
          
 class Autopilot:
    def __init__(self, ship):
@@ -65,7 +74,7 @@ class Autopilot:
       self.engineCount = len(self.ship.engines())
       self.analysis = Analysis(self.ship)
       
-   @Timing.timedFunction("Simulate/Ship/Autopilot/Run")
+   @Timing.timedFunction("Autopilot/Run")
    def run(self):      
       if self.engineCount != len(self.ship.engines()):
          self.analysis = Analysis(self.ship)
@@ -106,24 +115,28 @@ class Autopilot:
    
    
    def thrustToTargetRadius(self):
-      distance = Vector.magnitude(self.target.vector()) - 400
-      speed = Vector.scalarProjection(self.target.velocity(), [-1, 0])
-      
-      maxTowardAcceleration = self.analysis.maxForwardAcceleration
-      maxAwayAcceleration = self.analysis.maxReverseAcceleration
-      
-      power = calculatePowerLevelForSmoothApproach(distance, speed, 
-                                        maxTowardAcceleration, 
-                                        maxAwayAcceleration,
-                                        log=False)
-
-      self.powerEngines(power, self.analysis.forwardEngines, self.analysis.reverseEngines)
+      if abs(Vector.direction(self.target.vector())) < 0.5:
+         distance = Vector.magnitude(self.target.vector()) - 900
+         speed = Vector.scalarProjection(self.target.velocity(), [-1, 0])
+         
+         maxTowardAcceleration = self.analysis.maxRemainingForwardAcceleration()
+         maxAwayAcceleration = self.analysis.maxRemainingReverseAcceleration()
+         
+         power = calculatePowerLevelForSmoothApproach(distance, speed, 
+                                           maxTowardAcceleration, 
+                                           maxAwayAcceleration,
+                                           log=False)
+   
+         self.powerEngines(power, self.analysis.forwardEngines, self.analysis.reverseEngines)
       
    def fireWeaponsIfPossible(self):
-      if abs(Vector.direction(self.target.vector())) < 0.1:
+      direction = abs(Vector.direction(self.target.vector()))
+      range = abs(Vector.magnitude(self.target.vector()))
+      
+      if direction < 0.1 and range < 2500:
          self.weaponsEngaged = True
 
-      if abs(Vector.direction(self.target.vector())) > 0.3:
+      if direction > 0.3 or range > 6000:
          self.weaponsEngaged = False
          
       if self.weaponsEngaged:
@@ -137,10 +150,10 @@ class Autopilot:
          
    def powerEngines(self, power, positiveEngines, negativeEngines):
       for e in positiveEngines:
-         e.setPower(power)
+         e.setPower(e.power() + power)
          
       for e in negativeEngines:
-         e.setPower(-power)
+         e.setPower(e.power() - power)
          
    def fireAllWeapons(self):
       for w in self.ship.weapons():

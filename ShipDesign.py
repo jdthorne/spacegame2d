@@ -4,37 +4,25 @@
 SHIP_DESIGN = {}
 
 SHIP_DESIGN[0] = """\
-    [PDP]   
-     [SS]
-      SS
-    PDPDD 
-   <CPPPDD>
-    PDPDD 
-      SS
-     [SS]
-    [PDP]   
-"""
-
-SHIP_DESIGN[0] = """\
-    <>
-     P
-  <DPCD>
-     P
-    <>
+   <PD>
+  <PCPP>
+   <PD>
 """
 
 SHIP_DESIGN[1] = """\
+  <PDP>
    <D>
    <S>
-   <SD>
-   DDPP   
-  SPPPDD
-<CSSPPPSD>
-  SPPPDD
-   DDPP
-   <SD>
+  <DSD>
+ <DDDPPD>  
+ PDPPPDD
+<DSCPPPSD>
+ PDPPPDD
+ <DDDPDD>
+  <DSD>
    <S>
    <D>
+  <PDP>
 """
 
 

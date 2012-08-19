@@ -2,8 +2,8 @@ import random
 import Vector
 
 class World:
-   def __init__(self):
-      random.seed(500)
+   def __init__(self, seed=500):
+      random.seed(seed)
       self.all = []
 
    def scan(self):

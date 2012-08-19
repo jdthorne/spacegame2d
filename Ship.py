@@ -296,6 +296,8 @@ class Ship(Physics.RigidBody):
          for module in self.modules[:]:
             radius = Scalar.bound(MODULE_SIZE * 2, (2.0 * Vector.magnitude(item.velocity)), MODULE_SIZE * 10)
             if abs(Vector.magnitude(Vector.offset(item.position, module.absolutePosition()))) < radius:
+               self.applyForce(Vector.scale(item.velocity, 2), module.position)
+
                didLoseModules = True
                self.explodeModule(module)
                

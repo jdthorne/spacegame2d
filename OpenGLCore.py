@@ -9,6 +9,7 @@ import Vector
 import Timing
 
 additiveSprites = ["exhaust", "explosion", "plasma", "deflector-field"]
+#additiveSprites = ["plasma"]
 
 structureLayer = pyglet.graphics.OrderedGroup(0)
 moduleLayer = pyglet.graphics.OrderedGroup(1)
@@ -41,8 +42,11 @@ for f in os.listdir("."):
       availableSprites[name] = []
       usedSprites[name] = []
 
+windowSize = (1680, 1050)
 worldPosition = (200, 200)
 worldScale = 1.0
+
+halfWindowSize = Vector.scale(windowSize, 0.5)
 
 batch = pyglet.graphics.Batch()
 
@@ -51,7 +55,7 @@ def orientWorld(world):
    global worldScale
    
    xMin, yMin = (9999999, 9999999)
-   xMax, yMax = (0, 0)
+   xMax, yMax = (-9999999, -9999999)
    for o in world.all[:]:
    	if o.exciting:
 			x, y = o.position
@@ -65,7 +69,7 @@ def orientWorld(world):
 			if y > yMax:
 				yMax = y
          
-   padding = 400
+   padding = 200
    xMin -= padding
    yMin -= padding
    xMax += padding
@@ -73,13 +77,13 @@ def orientWorld(world):
    
    xScale = 1280 / (xMax - xMin)
    yScale = 720 / (yMax - yMin)
-   worldScale = (0.9 * worldScale) + (0.1 * min(2.0, xScale, yScale))
+   worldScale = (0.95 * worldScale) + (0.05 * min(2.0, xScale, yScale))
    
    minPos = (xMin, yMin)
    maxPos = (xMax, yMax)
    center = Vector.scale(Vector.add(minPos, maxPos), -0.5)
 
-   worldPosition = Vector.add(Vector.scale(worldPosition, 0.9), Vector.scale(center, 0.1))
+   worldPosition = Vector.add(Vector.scale(worldPosition, 0.95), Vector.scale(center, 0.05))
       
 
 @Timing.timedFunction("Draw/Free")
@@ -118,7 +122,7 @@ def findSprite(name):
 def drawSprite(name, position, rotation=0.0, scale=1.0, alpha=1.0):
    sprite = findSprite(name)
    
-   x, y = Vector.add(Vector.scale(Vector.add(position, worldPosition), worldScale), (1280/2, 720/2))
+   x, y = Vector.add(Vector.scale(Vector.add(position, worldPosition), worldScale), halfWindowSize)
    sprite.set_position(x, y)
       
    sprite.rotation = -180 * (rotation / math.pi)
@@ -136,7 +140,7 @@ def drawBullet(bullet):
       drawSprite("plasma", bullet.position, scale=3.0, alpha=((1.0*bullet.life)/bullet.initialLife))
 
 def drawExplosion(explosion):
-   scale = explosion.life / 45.0
+   scale = explosion.life / 22.0
    alpha = float(explosion.life) / explosion.initialLife
    
    drawSprite("explosion", explosion.position, scale=scale, alpha=alpha)
@@ -146,7 +150,7 @@ def drawEngine(engine):
    rotation = engine.parent.rotation + Vector.direction(engine.thrustVector) - math.pi
    
    drawSprite("engine-structure", engine.absolutePosition(), rotation + math.pi)
-   drawSprite("engine", engine.absolutePosition(), rotation)
+   drawSprite("engine", engine.absolutePosition(), rotation + math.pi)
    
    if engine.power > 0.01:
       engine.onTime += 1
@@ -218,7 +222,7 @@ def renderObject(obj):
 def runApplication(world):
    pyglet.gl.glEnable(pyglet.gl.GL_BLEND)
    pyglet.gl.glBlendFunc(pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE_MINUS_SRC_ALPHA)
-   window = pyglet.window.Window(width=1280, height=720)
+   window = pyglet.window.Window(width=windowSize[0], height=windowSize[1])
    fpsDisplay = pyglet.clock.ClockDisplay()
 
    @Timing.timedFunction("Simulate")
