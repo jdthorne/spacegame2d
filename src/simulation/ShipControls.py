@@ -1,6 +1,7 @@
 
 import Scalar
-import Vector
+from Vector import *
+import Timing
 
 class EngineWrapper:
    def __init__(self, realEngine):
@@ -8,10 +9,11 @@ class EngineWrapper:
    
    def power(self):
       return self._engine.power
+
    def setPower(self, power):
       self._engine.power = power
    
-   def thrustVector(self):
+   def thrustvectorSelf):
       return self._engine.thrustVector
       
    def position(self):

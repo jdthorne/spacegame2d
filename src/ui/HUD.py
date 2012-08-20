@@ -2,7 +2,7 @@
 import math
 
 import Scalar
-import Vector
+from Vector import *
 
 frameOfReference = ([0, 0], 0)
 vectorsToDraw = []
@@ -11,13 +11,13 @@ def displayVector(vector, color=(255,0,0), scale=1, position=[0, 0]):
    if Vector.Magnitude(vector) == 0:
       return
 
-   vector = Vector.Scale(vector, scale)
+   vector = vectorScale(vector, scale)
    vector = Vector.Rotate(vector, frameOfReference[1])
    
    startPoint = Vector.Add(position, frameOfReference[0])
    endPoint = Vector.Add(startPoint, vector)
    
-   arrowVector = Vector.Scale(Vector.Normalize(vector), 8)
+   arrowVector = vectorScale(Vector.Normalize(vector), 8)
 
    t1 = Vector.Add(endPoint, Vector.Rotate(arrowVector, math.pi * 0.90))
    t2 = Vector.Add(endPoint, Vector.Rotate(arrowVector, math.pi * -0.90))

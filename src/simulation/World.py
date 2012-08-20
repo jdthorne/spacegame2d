@@ -1,5 +1,5 @@
 import random
-import Vector
+from Vector import *
 
 class World:
    def __init__(self, seed=500):
@@ -31,9 +31,11 @@ class World:
       return False
       
 class WorldItem:
+   isShip = False
    exciting = False
    destroyed = False
    combatTeam = -1
+   life = 150
       
    def simulate(self):
       pass

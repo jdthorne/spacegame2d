@@ -3,8 +3,7 @@ import math
 
 import HUD
 import Scalar
-import Vector
-import Timing
+from Vector import *
 
 def calculatePowerLevelForSmoothApproach(distance, currentSpeed, maxPositiveAcceleration, maxNegativeAcceleration, log=False):
    if abs(distance) < 0.000001:
@@ -49,20 +48,20 @@ class Analysis:
       self.positiveDizzyEngines = [ e for e in ship.engines() if e.dizzy() > 0 ]
       self.negativeDizzyEngines = [ e for e in ship.engines() if e.dizzy() < 0 ]
    
-      self.maxPositiveDizzy = Vector.sum([ e.dizzy() for e in self.positiveDizzyEngines ])
-      self.maxNegativeDizzy = Vector.sum([ e.dizzy() for e in self.positiveDizzyEngines ])
+      self.maxPositiveDizzy = vectorSum([ e.dizzy() for e in self.positiveDizzyEngines ])
+      self.maxNegativeDizzy = vectorSum([ e.dizzy() for e in self.positiveDizzyEngines ])
 
       self.forwardEngines = [ e for e in ship.engines() if e.thrustVector()[0] > 0 ]
       self.reverseEngines = [ e for e in ship.engines() if e.thrustVector()[0] < 0 ]
       
-      self.maxForwardAcceleration = Vector.sum([ e.acceleration()[0] for e in self.forwardEngines ])
-      self.maxReverseAcceleration = Vector.sum([ e.acceleration()[0] for e in self.reverseEngines ])
+      self.maxForwardAcceleration = vectorSum([ e.acceleration()[0] for e in self.forwardEngines ])
+      self.maxReverseAcceleration = vectorSum([ e.acceleration()[0] for e in self.reverseEngines ])
    
    def maxRemainingForwardAcceleration(self):
-      return Vector.sum( [e.acceleration()[0] * (1.0 - e.power()) for e in self.forwardEngines] )
+      return vectorSum( [e.acceleration()[0] * (1.0 - e.power()) for e in self.forwardEngines] )
       
    def maxRemainingReverseAcceleration(self):
-      return Vector.sum( [e.acceleration()[0] * (1.0 - e.power()) for e in self.reverseEngines] )
+      return vectorSum( [e.acceleration()[0] * (1.0 - e.power()) for e in self.reverseEngines] )
          
          
 class Autopilot:
@@ -74,7 +73,6 @@ class Autopilot:
       self.engineCount = len(self.ship.engines())
       self.analysis = Analysis(self.ship)
       
-   @Timing.timedFunction("Autopilot/Run")
    def run(self):      
       if self.engineCount != len(self.ship.engines()):
          self.analysis = Analysis(self.ship)
@@ -94,7 +92,7 @@ class Autopilot:
       closestRange = 0
       for target in self.ship.sensors().scan():
          if (target.combatTeam() != -1) and (target.combatTeam() != self.ship.combatTeam()):
-            range = (abs(Vector.direction(target.vector())) * 600) + abs(Vector.magnitude(target.vector()))
+            range = (abs(Vector.direction(target.vector())) * 600) + abs(vectorMagnitude(target.vector()))
          
             if (closestTarget == None) or (range < closestRange):
                closestRange = range
@@ -116,8 +114,8 @@ class Autopilot:
    
    def thrustToTargetRadius(self):
       if abs(Vector.direction(self.target.vector())) < 0.5:
-         distance = Vector.magnitude(self.target.vector()) - 900
-         speed = Vector.scalarProjection(self.target.velocity(), [-1, 0])
+         distance = vectorMagnitude(self.target.vector()) - 900
+         speed = vectorScalarProjection(self.target.velocity(), [-1, 0])
          
          maxTowardAcceleration = self.analysis.maxRemainingForwardAcceleration()
          maxAwayAcceleration = self.analysis.maxRemainingReverseAcceleration()
@@ -131,7 +129,7 @@ class Autopilot:
       
    def fireWeaponsIfPossible(self):
       direction = abs(Vector.direction(self.target.vector()))
-      range = abs(Vector.magnitude(self.target.vector()))
+      range = abs(vectorMagnitude(self.target.vector()))
       
       if direction < 0.1 and range < 2500:
          self.weaponsEngaged = True
