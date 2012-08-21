@@ -1,2 +1,0 @@
-#!/opt/local/bin/python
-

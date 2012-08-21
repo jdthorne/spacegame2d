@@ -12,8 +12,8 @@ class UserInterface:
       self.currentDisplay = toDisplay
 
    def start(self):
-      #pyglet.gl.glEnable(pyglet.gl.GL_BLEND)
-      #pyglet.gl.glBlendFunc(pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE_MINUS_SRC_ALPHA)
+      pyglet.gl.glEnable(pyglet.gl.GL_BLEND)
+      pyglet.gl.glBlendFunc(pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE_MINUS_SRC_ALPHA)
       window = pyglet.window.Window(width=windowSize[0], height=windowSize[1])
       fpsDisplay = pyglet.clock.ClockDisplay()
          
@@ -22,14 +22,14 @@ class UserInterface:
          self.draw()
 
       pyglet.clock.set_fps_limit(60.0)
-      pyglet.clock.schedule_interval(self.tick, 1/60.0)
+      pyglet.clock.schedule_interval(self.tick, 1/30.0)
 
       self.window = window
       self.fpsDisplay = fpsDisplay
       pyglet.app.run()
 
    def tick(self, dt):
-      self.currentDisplay.tick()
+      self.currentDisplay.tick(dt)
 
       if self.currentDisplay.complete():
          pyglet.app.exit()

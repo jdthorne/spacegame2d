@@ -14,8 +14,11 @@ class Module:
       self.position = position
       self.mass = mass
  
+   def __eq__(self, rhs):
+      return self is rhs
+
    def absolutePosition(self):
-      relativePosition = Vector.rotate(self.position, self.parent.rotation)
+      relativePosition = vectorRotate(self.position, self.parent.rotation)
       return vectorAdd(relativePosition, self.parent.position)      
 
    def simulate(self):
@@ -36,6 +39,10 @@ class FlightComputer(Module):
       if self.autopilot == None:
          self.autopilot = self.createAutopilot(ShipControls.ShipWrapper(self.parent))
 
+      self.runAutopilot()
+
+   @Timing.timedFunction
+   def runAutopilot(self):
       self.autopilot.run()
 
 class Engine(Module):
@@ -74,10 +81,10 @@ class PlasmaCannon(Module):
       self.recharge = self.parent.world.randomValue(15, 45)
       
       bulletStart = vectorAdd(self.position, [1, 0])
-      offset = Vector.rotate(bulletStart, self.parent.rotation)
+      offset = vectorRotate(bulletStart, self.parent.rotation)
       position = vectorAdd(self.parent.position, offset)
       
-      self.parent.world.addObject(Misc.Bullet(position, Vector.rotate([Ship.MODULE_SIZE, 0], self.parent.rotation), self.parent))
+      self.parent.world.addObject(Misc.Bullet(position, vectorRotate([Ship.MODULE_SIZE, 0], self.parent.rotation), self.parent))
    
    def simulate(self):
       if self.recharge > 0:
@@ -92,32 +99,4 @@ class Deflector(Module):
    def simulate(self):
       powerupTime = 5.0 * 90.0
 
-      self.parent.availableDeflectorPower = Scalar.bound(0.0, self.parent.availableDeflectorPower + 1.0/powerupTime, 1.0)
-
-def simulateDeflectorsForShip(ship):
-   range = 700.0
-
-   totalDeflectors = 0
-   for m in ship.modules:
-      if m.isDeflector:
-         totalDeflectors += 1
-
-   for object in ship.world.all:
-      if object is ship:
-         continue
-         
-      if not object.solidFor(ship):
-         continue
-      
-      distance = Vector.distance(object.position, ship.position)
-      if distance < 1 or distance > range:
-         continue
-
-      power = (range - distance) / range
-      power = power * power * ship.availableDeflectorPower * totalDeflectors
-
-      mix = power
-      object.velocity = vectorAdd(vectorScale(object.velocity, 1.0-mix), vectorScale(ship.velocity, mix))
-
-      delta = vectorMagnitude(Vector.offset(object.velocity, ship.velocity))
-      ship.availableDeflectorPower -= (power * delta * 0.004)
+      self.parent.availableDeflectorPower += 1.0/powerupTime

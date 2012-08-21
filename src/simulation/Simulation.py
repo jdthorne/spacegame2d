@@ -61,7 +61,7 @@ class Simulation:
          
          minDistance = 999999999
          for obj in self.world.all:
-            distance = vectorMagnitude(Vector.offset( obj.position, newPosition))
+            distance = vectorMagnitude(vectorOffset( obj.position, newPosition))
             
             if distance < minDistance:
                minDistance = distance

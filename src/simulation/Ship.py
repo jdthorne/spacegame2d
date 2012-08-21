@@ -24,7 +24,7 @@ class Ship(Physics.RigidBody):
       self.world = world
       self.rotation = rotation
       self.isShip = True
-      self.availableDeflectorPower = 1.0
+      self.availableDeflectorPower = 1000.0
       
       self.flightComputer = None
       self.modules = []
@@ -60,13 +60,13 @@ class Ship(Physics.RigidBody):
       self.recalculateModules()
       
    def scanForTargets(self):
-      return [ t for t in self.world.scan() if t != self ]
+      return [ t for t in self.world.scan() if not (t is self) ]
 
    def centerOfMass(self):
       x = vectorSum([m.mass * m.position[0] for m in self.modules]) / self.mass()
       y = vectorSum([m.mass * m.position[1] for m in self.modules]) / self.mass()
       
-      return [x, y]
+      return (x, y)
 
    def mass(self):
       return self.calculatedMass
@@ -81,7 +81,7 @@ class Ship(Physics.RigidBody):
       # Move to center of mass
       move = self.centerOfMass()      
       for m in self.modules:
-         m.position = Vector.offset(m.position, move)
+         m.position = vectorOffset(m.position, move)
          
       self.position = vectorAdd(self.position, move)
       
@@ -96,80 +96,120 @@ class Ship(Physics.RigidBody):
          
       self.calculatedMomentOfInertia = result
 
+      # Calculate other stats
+      self.maxDeflectorPower = len([ m for m in self.modules if isinstance(m, Modules.Deflector) ])
+      self.collisionRadius = max([ vectorMagnitude(m.position) for m in self.modules ]) + MODULE_SIZE
+
+   @Timing.timedFunction
    def simulate(self):
       Physics.RigidBody.simulate(self)
       HUD.frameOfReference = (self.position, self.rotation)
       
       self.simulateAllModules()
-      self.simulateCollisions()
-      self.simulateDeflectors()
+      self.simulateWorldEffects()
       
+   @Timing.timedFunction
    def simulateAllModules(self):
       for m in self.modules:
          m.simulate()
 
-   def simulateDeflectors(self):
-      Modules.simulateDeflectorsForShip(self)
 
    @Timing.timedFunction
-   def simulateCollisions(self):
-      didLoseModules = False
-      for item in self.world.all[:]:
-         if item is self or not item.solidFor(self):
-            continue
-         
-         range = Vector.distance(item.position, self.position)
-         if abs(range) > 500:
-            continue
-         
-         for module in self.modules[:]:
-            radius = (2.0 * vectorMagnitude(item.velocity))
-            radius = Scalar.bound(MODULE_SIZE * 2, radius, MODULE_SIZE * 10)
+   def simulateWorldEffects(self):
+      self.damaged = False
+      self.availableDeflectorPower = Scalar.bound(0, self.availableDeflectorPower, self.maxDeflectorPower)
+      self.currentDeflectorPower = self.availableDeflectorPower / self.maxDeflectorPower
 
-            distance = abs(Vector.distance(item.position, module.absolutePosition()))
-            if distance < radius:
-               self.applyForce(vectorScale(item.velocity, 2), module.position)
+      for item in self.world.all:
+         if (item is self) or (not item.solidFor(self)):
+            continue
 
-               didLoseModules = True
-               self.explodeModule(module)
-               
-               if item.combatTeam == -1:
-                  item.destroyed = True
-               
-      if not (self.flightComputer in self.modules):
-         for m in self.modules:
+         distance = vectorDistance(item.position, self.position)
+         if abs(distance) < 900.0:
+            self.simulateDeflectors(item, distance)
+
+         if abs(distance) < self.collisionRadius:
+            self.simulateCollisions(item)
+
+      if self.damaged:
+         self.simulateDamage()
+
+   def simulateDeflectors(self, item, distance):
+      if self.availableDeflectorPower < 0.02:
+         return
+
+      if distance < 1:
+         return
+
+      delta = vectorDistance(item.velocity, self.velocity)
+      if delta < 0.01:
+         item.velocity = self.velocity
+         return
+
+      power = (900.0 - distance) / 900.0
+      power = power * power * (self.availableDeflectorPower / self.maxDeflectorPower)
+
+      mix = power
+      item.velocity = vectorAdd(vectorScale(item.velocity, 1.0-mix), vectorScale(self.velocity, mix))
+
+      self.availableDeflectorPower -= (power * delta * 0.004)
+
+   def simulateCollisions(self, item):
+      radius = (2.0 * vectorMagnitude(item.velocity))
+      radius = Scalar.bound(MODULE_SIZE * 2, radius, MODULE_SIZE * 10)
+
+      for module in self.modules:
+         distance = abs(vectorDistance(item.position, module.absolutePosition()))
+         if distance < radius:
+            self.applyForce(vectorScale(item.velocity, 2), module.position)
+
+            self.damaged = True
+            self.explodeModule(module)
+            
+            if item.combatTeam == -1:
+               item.destroyed = True
+               return
+
+   @Timing.timedFunction
+   def simulateDamage(self):
+      if self.destroyed:
+         for module in self.modules:
             self.explodeModule(module)
             
          self.world.addObject(Misc.Explosion(self.flightComputer.absolutePosition(), 
                                              self.velocity, 
                                              250))
-         self.destroyed = True
          return
+   
+      connectedModules = []
+      def recurseModules(start):
+         for m in self.modules:
+            if m in connectedModules:
+               continue
+            
+            distance = vectorMagnitude(vectorOffset(start.position, m.position))
+            if distance < MODULE_SIZE * 1.2:
+               connectedModules.append(m)
+               recurseModules(m)
       
-      if didLoseModules:
-         connectedModules = []
-         def recurseModules(start):
-            for m in self.modules:
-               if m in connectedModules:
-                  continue
-               
-               distance = vectorMagnitude(Vector.offset(start.position, m.position))
-               if distance < MODULE_SIZE * 1.2:
-                  connectedModules.append(m)
-                  recurseModules(m)
-         
-         recurseModules(self.flightComputer)
-         
-         for m in self.modules[:]:
-            if not m in connectedModules:
-               self.explodeModule(m)
-         
-         #self.recalculateModules()
+      recurseModules(self.flightComputer)
+      
+      for m in self.modules[:]:
+         if not m in connectedModules:
+            self.explodeModule(m)
+      
+      #self.recalculateModules()
+
                      
    def explodeModule(self, module):
-      if module in self.modules:
-         self.modules.remove(module)
-         self.world.addObject(Misc.Explosion(module.absolutePosition(), self.velocity, 65))
+      if not (module in self.modules):
+         return
+
+      if module is self.flightComputer:
+         self.destroyed = True
+
+      self.modules.remove(module)
+      self.world.addObject(Misc.Explosion(module.absolutePosition(), self.velocity, 65))
 
 
 

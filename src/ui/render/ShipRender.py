@@ -5,7 +5,7 @@ import Ship
 import Sprite
 
 def drawEngine(engine):
-   rotation = engine.parent.rotation + Vector.direction(engine.thrustVector) - math.pi
+   rotation = engine.parent.rotation + vectorDirection(engine.thrustVector) - math.pi
    
    Sprite.draw("engine-structure", engine.absolutePosition(), rotation + math.pi)
    Sprite.draw("engine", engine.absolutePosition(), rotation + math.pi)
@@ -19,11 +19,11 @@ def drawEngine(engine):
 
    onPower = engine.onTime / 20.0
    if onPower > 0.05:
-      exhaustDirection = Vector.rotate(vectorScale(engine.thrustVector, -1), engine.parent.rotation)
-      exhaustPoint = vectorScale(Vector.normalize(exhaustDirection), Ship.MODULE_SIZE)
+      exhaustDirection = vectorRotate(vectorScale(engine.thrustVector, -1), engine.parent.rotation)
+      exhaustPoint = vectorScale(vectorNormalize(exhaustDirection), Ship.MODULE_SIZE)
       exhaustPoint = vectorAdd(engine.absolutePosition(), exhaustPoint)
    
-      rotation = engine.parent.rotation + Vector.direction(engine.thrustVector) + (math.pi/2)
+      rotation = engine.parent.rotation + vectorDirection(engine.thrustVector) + (math.pi/2)
       Sprite.draw("exhaust", exhaustPoint, rotation, alpha=onPower)
 
 def drawPlasmaCannon(cannon):
@@ -34,7 +34,7 @@ def drawDeflector(deflector):
    Sprite.draw("structure", deflector.absolutePosition(), deflector.parent.rotation)
    Sprite.draw("deflector", deflector.absolutePosition(), deflector.parent.rotation)
 
-   alpha = deflector.parent.availableDeflectorPower
+   alpha = deflector.parent.availableDeflectorPower / deflector.parent.maxDeflectorPower
    Sprite.draw("deflector-field", deflector.absolutePosition(), alpha=alpha, scale=2.5)      
 
 def drawComputer(computer):

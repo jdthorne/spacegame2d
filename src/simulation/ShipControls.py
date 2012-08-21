@@ -13,7 +13,7 @@ class EngineWrapper:
    def setPower(self, power):
       self._engine.power = power
    
-   def thrustvectorSelf):
+   def thrustVector(self):
       return self._engine.thrustVector
       
    def position(self):
@@ -31,12 +31,12 @@ class TargetWrapper:
       self._target = realTarget
       
    def vector(self):
-      offset = Vector.offset(self._target.position, self._ship.position)
-      return Vector.rotate(offset, -self._ship.rotation)
+      offset = vectorOffset(self._target.position, self._ship.position)
+      return vectorRotate(offset, -self._ship.rotation)
 
    def velocity(self):
-      relativeVelocity = Vector.offset(self._target.velocity, self._ship.velocity)
-      return Vector.rotate(relativeVelocity, -self._ship.rotation)
+      relativeVelocity = vectorOffset(self._target.velocity, self._ship.velocity)
+      return vectorRotate(relativeVelocity, -self._ship.rotation)
       
    def combatTeam(self):
       return self._target.combatTeam

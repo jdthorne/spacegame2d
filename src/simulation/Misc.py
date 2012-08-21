@@ -47,7 +47,7 @@ class Bullet(Physics.PointBody):
       self.life -= 1
       Physics.PointBody.simulate(self)
       
-      if Vector.distance(self.position, self.owner.position) >= 200:
+      if vectorDistance(self.position, self.owner.position) >= 200:
          self.deflectorHold = False
          
       if self.life < 0:

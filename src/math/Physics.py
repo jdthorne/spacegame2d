@@ -10,6 +10,9 @@ class PointBody(World.WorldItem):
    def __init__(self, position):
       self.position = position
       self.velocity = [0, 0]
+
+   def __eq__(self, rhs):
+      return self is rhs
       
    def simulate(self):
       self.position = vectorAdd(self.position, self.velocity)
@@ -40,7 +43,7 @@ class RigidBody(PointBody):
       self.rotation = (self.rotation + self.spin) % (2 * math.pi)
 
    def applyLocalForce(self, force, atPoint=[0, 0]):
-      force = Vector.rotate(force, self.rotation)
+      force = vectorRotate(force, self.rotation)
       self.applyForce(force, atPoint)
    
    def applyForce(self, force, atPoint=[0,0]):
@@ -49,7 +52,7 @@ class RigidBody(PointBody):
       self.spin += self.calculateDeltaSpinDueToForce(force, atPoint)
    
    def calculateDeltaSpinDueToForce(self, force, atPoint):
-      localForce = Vector.rotate(force, -self.rotation)
+      localForce = vectorRotate(force, -self.rotation)
       return self.calculateDeltaSpinDueToLocalForce(localForce, atPoint)
    
    def calculateDeltaSpinDueToLocalForce(self, force, atPoint):

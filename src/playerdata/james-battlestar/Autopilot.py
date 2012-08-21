@@ -55,7 +55,7 @@ class Autopilot:
       closestRange = 0
       for target in self.ship.sensors().scan():
          if (target.combatTeam() != -1) and (target.combatTeam() != self.ship.combatTeam()):
-            range = (abs(Vector.direction(target.vector())) * 600) + abs(vectorMagnitude(target.vector()))
+            range = (abs(vectorDirection(target.vector())) * 600) + abs(vectorMagnitude(target.vector()))
          
             if (closestTarget == None) or (range < closestRange):
                closestRange = range
@@ -68,7 +68,7 @@ class Autopilot:
          self.powerEngines(1.0, self.analysis.positiveDizzyEngines, [])
       
    def thrustToTarget(self):
-      direction = Vector.direction(self.target.vector())
+      direction = vectorDirection(self.target.vector())
       if abs(direction) < 0.2:
          self.powerEngines(1.0, self.analysis.forwardEngines)
       elif abs(direction) > math.pi - 0.2:
@@ -78,7 +78,7 @@ class Autopilot:
       spinSpeed = abs(self.ship.spin() * 0.51)
 
       for target in self.ship.sensors().scan():
-         direction = abs(Vector.direction(self.target.vector()))
+         direction = abs(vectorDirection(self.target.vector()))
          range = abs(vectorMagnitude(self.target.vector()))
 
          if direction < spinSpeed and range < 2500:

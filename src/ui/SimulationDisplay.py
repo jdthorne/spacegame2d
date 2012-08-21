@@ -1,5 +1,6 @@
 import Render
 import Sprite
+import Scalar
 from Vector import *
 import UserInterface
 
@@ -16,7 +17,7 @@ class SimulationDisplay:
    def complete(self):
       return self.simulation.complete()
 
-   def tick(self):
+   def tick(self, dt):
       self.simulation.tick()
 
    def orientWorld(self):

@@ -92,7 +92,7 @@ class Autopilot:
       closestRange = 0
       for target in self.ship.sensors().scan():
          if (target.combatTeam() != -1) and (target.combatTeam() != self.ship.combatTeam()):
-            range = (abs(Vector.direction(target.vector())) * 600) + abs(vectorMagnitude(target.vector()))
+            range = (abs(vectorDirection(target.vector())) * 600) + abs(vectorMagnitude(target.vector()))
          
             if (closestTarget == None) or (range < closestRange):
                closestRange = range
@@ -101,7 +101,7 @@ class Autopilot:
       self.target = closestTarget
    
    def rotateToFaceTarget(self):
-      angularDistance = Vector.direction(self.target.vector())
+      angularDistance = vectorDirection(self.target.vector())
       angularSpeed = self.ship.spin()
       
       power = calculatePowerLevelForSmoothApproach(angularDistance, angularSpeed,
@@ -113,7 +113,7 @@ class Autopilot:
    
    
    def thrustToTargetRadius(self):
-      if abs(Vector.direction(self.target.vector())) < 0.5:
+      if abs(vectorDirection(self.target.vector())) < 0.5:
          distance = vectorMagnitude(self.target.vector()) - 900
          speed = vectorScalarProjection(self.target.velocity(), [-1, 0])
          
@@ -128,7 +128,7 @@ class Autopilot:
          self.powerEngines(power, self.analysis.forwardEngines, self.analysis.reverseEngines)
       
    def fireWeaponsIfPossible(self):
-      direction = abs(Vector.direction(self.target.vector()))
+      direction = abs(vectorDirection(self.target.vector()))
       range = abs(vectorMagnitude(self.target.vector()))
       
       if direction < 0.1 and range < 2500:
