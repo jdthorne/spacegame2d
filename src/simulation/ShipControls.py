@@ -44,6 +44,9 @@ class TargetWrapper:
    def destroyed(self):
       return self._target.distroyed
 
+   def combatStrength(self):
+      return len(self._target.weapons)
+
 class SensorWrapper:
    def __init__(self, realShip):
       self._ship = realShip
@@ -58,9 +61,15 @@ class WeaponWrapper:
    def fire(self):
       self._weapon.fire()
 
+   def ready(self):
+      return self._weapon.ready()
+
 class ShipWrapper:
    def __init__(self, realShip):
       self._ship = realShip
+      self.updateAll()
+
+   def updateAll(self):
       self._engines = [ EngineWrapper(e) for e in self._ship.engines ]
       self._weapons = [ WeaponWrapper(w) for w in self._ship.weapons ]
       

@@ -12,19 +12,24 @@ import ShipControls
 import Physics
 import Cache
 import Timing
+import random
 
 MODULE_SIZE = 40
 
 class Ship(Physics.RigidBody):
-   def __init__(self, design, autopilot, position, rotation, world, fleetId):
+   def __init__(self, name, design, autopilot, position, rotation, world, fleetId):
       Physics.RigidBody.__init__(self, position)
       
+      self.name = name
       self.combatTeam = fleetId
       self.exciting = True
       self.world = world
       self.rotation = rotation
       self.isShip = True
       self.availableDeflectorPower = 1000.0
+
+      self.damaged = False
+      self.hasTakenDamage = False
       
       self.flightComputer = None
       self.modules = []
@@ -56,6 +61,9 @@ class Ship(Physics.RigidBody):
          
       self.engines = [m for m in self.modules if isinstance(m, Modules.Engine)]
       self.weapons = [r for r in self.modules if isinstance(r, Modules.PlasmaCannon)]
+
+      random.shuffle(self.engines)
+      random.shuffle(self.weapons)
       
       self.recalculateModules()
       
@@ -202,11 +210,17 @@ class Ship(Physics.RigidBody):
 
                      
    def explodeModule(self, module):
+      self.hasTakenDamage = True
       if not (module in self.modules):
          return
 
       if module is self.flightComputer:
          self.destroyed = True
+
+      if module in self.weapons:
+         self.weapons.remove(module)
+      if module in self.engines:
+         self.engines.remove(module)
 
       self.modules.remove(module)
       self.world.addObject(Misc.Explosion(module.absolutePosition(), self.velocity, 65))

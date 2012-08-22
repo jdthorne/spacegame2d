@@ -10,10 +10,16 @@ worldScale = 0.1
 additiveSprites = ["exhaust", "explosion", "plasma", "deflector-field"]
 
 batch = pyglet.graphics.Batch()
+textBatch = pyglet.graphics.Batch()
 
-structureLayer = pyglet.graphics.OrderedGroup(0)
-moduleLayer = pyglet.graphics.OrderedGroup(1)
-effectLayer = pyglet.graphics.OrderedGroup(2)
+backgroundLayer = pyglet.graphics.OrderedGroup(0)
+structureLayer = pyglet.graphics.OrderedGroup(2)
+moduleLayer = pyglet.graphics.OrderedGroup(3)
+effectLayer = pyglet.graphics.OrderedGroup(4)
+sidebarLayer = pyglet.graphics.OrderedGroup(5)
+sidebarShipLayer = pyglet.graphics.OrderedGroup(6)
+sidebarTextLayer = pyglet.graphics.OrderedGroup(7)
+sidebarTextLayer2 = pyglet.graphics.OrderedGroup(8)
 
 imageLayers = { "computer": moduleLayer,
              "deflector-field": effectLayer,
@@ -23,8 +29,19 @@ imageLayers = { "computer": moduleLayer,
             "explosion": effectLayer,
             "plasma-cannon": moduleLayer,
             "plasma": effectLayer,
-            "structure": structureLayer,
-            "engine-structure": structureLayer,
+            "structure-0": structureLayer,
+            "structure-1": structureLayer,
+            "structure-2": structureLayer,
+            "engine-structure": moduleLayer,
+            "sidebar": sidebarLayer,
+            "ship-display": sidebarShipLayer,
+            "team-display-0": sidebarShipLayer,
+            "team-display-1": sidebarShipLayer,
+            "team-display-2": sidebarShipLayer,
+            "ship-deflector": sidebarTextLayer,
+            "ship-ok": sidebarTextLayer2,
+            "ship-damage": sidebarTextLayer2,
+            "background": backgroundLayer,
            }
 
 images = {}
@@ -32,7 +49,7 @@ images = {}
 availableSprites = {}
 usedSprites = {}
 for f in os.listdir("./graphics/"):
-   if f.endswith(".png"):
+   if f.endswith(".png") or f.endswith(".jpg"):
       name = f.split(".")[0].lower()
 
       image = pyglet.image.load("graphics/" + f)
@@ -42,11 +59,6 @@ for f in os.listdir("./graphics/"):
       availableSprites[name] = []
       usedSprites[name] = []
 
-
-def freeAll():
-   for name in usedSprites:
-      availableSprites[name] = usedSprites[name]
-      usedSprites[name] = []
 
 def create(name):
    blend_src, blend_dest = (pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE_MINUS_SRC_ALPHA)
@@ -75,19 +87,78 @@ def find(name):
       
       return sprite
 
-def draw(name, position, rotation=0.0, scale=1.0, alpha=1.0):
+def draw(name, position, rotation=0.0, scale=1.0, alpha=1.0, hud=False):
    sprite = find(name)
-   
-   x, y = vectorScale(vectorAdd(position, worldPosition), worldScale)
+
+   if hud:
+      x, y = position 
+   else:
+      x, y = vectorScale(vectorAdd(position, worldPosition), worldScale)
+      scale *= worldScale
+
    sprite.set_position(x, y)
       
    sprite.rotation = -180 * (rotation / math.pi)
 
-   if scale * worldScale != sprite.scale:
-      sprite.scale = scale * worldScale
+   if scale != sprite.scale:
+      sprite.scale = scale
       
    if int(alpha * 255.0) != sprite.opacity:
       sprite.opacity = int(alpha * 255.0)
 
+labels = []
+labelId = 0
+
+def findLabel():
+   global labelId 
+
+   labelId += 1
+   if labelId < len(labels):
+      return labels[labelId]
+
+   else:
+      label = pyglet.text.Label("", anchor_x='left', anchor_y='center', 
+                                    font_size=10, batch=textBatch,
+                                    font_name="Helvetica")
+
+      labels.append(label)
+      return label
+
+def drawText(text, position, color=(255,255,255,255), bold=False, align="left"):
+   label = findLabel()
+
+   if label.text != text:
+      label.text = text 
+
+   if label.bold != bold:
+      label.bold = bold
+
+   x, y = position
+
+   if label.x != x:
+      label.x = x
+   if label.y != y:
+      label.y = y
+   if label.color != color:
+      label.color = color
+   if label.anchor_x != align:
+      label.anchor_x = align
+
+   label.draw()
+
+def freeAll():
+   global labelId
+
+   for name in usedSprites:
+      availableSprites[name] = usedSprites[name]
+      usedSprites[name] = []
+
+   labelId = -1
+
 def drawBatch():
+   if labelId < len(labels) - 1:
+      for i in range(labelId+1, len(labels)):
+         labels[i].x = -5000
+
    batch.draw()
+   textBatch.draw()

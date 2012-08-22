@@ -1,18 +1,18 @@
 battlestar = """\
-  <PDP>
-   <PD>
-   <P>
-  <DPD>
-  <DPPD>  
+ <PDDP
+  <PP
+  <PDP
+  <PDP
+  <PDP
  PDPPPDD
-<DSCPPPSD>
+SDSCPPPSDS
  PDPPPDD
-  <DPPD>  
-  <DPD>
-   <P>
-   <PD>
-  <PDP>
+  PDDP>
+   PP>
+   PDP>
+   PDP>
+   PDP>
 """
 
 def fleet():
-   return [ battlestar ]
+   return [ ("Goliath", battlestar) ]

@@ -36,6 +36,7 @@ class Autopilot:
       
       self.weaponsEngaged = False
       self.engineCount = len(self.ship.engines())
+      self.targetCount = 0
       self.analysis = Analysis(self.ship)
       
    def run(self):      
@@ -44,23 +45,37 @@ class Autopilot:
       
       self.clearEngines()
       self.acquireTarget()
-      if self.target != None:
-         self.spin()
-         self.thrustToTarget()
-         self.fireIfAble()
+      self.spin()
+      self.fireIfAble()
+
+   def status(self):
+      if self.targetCount > 0:
+         return (1.0, "%d targets" % (self.targetCount,))
+      elif self.ship.spin() < 0.2:
+         return (0.5, "spinning up")
+      else:
+         return (0.2, "ready")
+         
       
    # ========== HIGH-LEVEL CONTROLS =============
    def acquireTarget(self):
       closestTarget = None
       closestRange = 0
+
+      self.targets = []
+
       for target in self.ship.sensors().scan():
-         if (target.combatTeam() != -1) and (target.combatTeam() != self.ship.combatTeam()):
-            range = (abs(vectorDirection(target.vector())) * 600) + abs(vectorMagnitude(target.vector()))
+         if (target.combatTeam() != -1) and (target.combatTeam() != self.ship.combatTeam()) and (target.combatStrength() > 0):
+            distance = vectorMagnitude(target.vector())
+
+            if distance < 2500:
+               self.targets.append(target)
          
-            if (closestTarget == None) or (range < closestRange):
-               closestRange = range
+            if (closestTarget == None) or (distance < closestRange):
+               closestRange = distance
                closestTarget = target
          
+      self.targetCount = len(self.targets)
       self.target = closestTarget
    
    def spin(self):
@@ -68,21 +83,35 @@ class Autopilot:
          self.powerEngines(1.0, self.analysis.positiveDizzyEngines, [])
       
    def thrustToTarget(self):
-      direction = vectorDirection(self.target.vector())
-      if abs(direction) < 0.2:
+      if self.targetCount < 4:
+         # We're cool - ATTACK
+         targetDirection = vectorDirection(self.target.vector())
+
+      else:
+         # Run away!
+         averageTargetVector = (0, 0)
+         for target in self.targets:
+            averageTargetVector = vectorAdd(target.vector(), averageTargetVector)
+
+         targetDirection = vectorDirection(vectorScale(averageTargetVector, -1))
+         print "Running away!", targetDirection
+
+      if abs(targetDirection) < 0.6:
          self.powerEngines(1.0, self.analysis.forwardEngines)
-      elif abs(direction) > math.pi - 0.2:
+      elif abs(targetDirection) > math.pi - 0.6:
          self.powerEngines(-1.0, [], self.analysis.reverseEngines)
+
+
 
    def fireIfAble(self):
       spinSpeed = abs(self.ship.spin() * 0.51)
 
-      for target in self.ship.sensors().scan():
-         direction = abs(vectorDirection(self.target.vector()))
-         range = abs(vectorMagnitude(self.target.vector()))
+      for target in self.targets:
+         direction = abs(vectorDirection(target.vector()))
+         distance = abs(vectorMagnitude(target.vector()))
 
-         if direction < spinSpeed and range < 2500:
-            self.fireAllWeapons()
+         if direction < spinSpeed and distance < 2500:
+            self.fireAtTarget()
             return
 
    # =============== LOW-LEVEL COMMANDS ===============
@@ -98,9 +127,15 @@ class Autopilot:
       for e in negativeEngines:
          e.setPower(e.power() - power)
          
-   def fireAllWeapons(self):
+   def fireAtTarget(self):
+      weaponsToFire = len(self.ship.weapons()) / self.targetCount
       for w in self.ship.weapons():
-         w.fire()
+         if w.ready():
+            w.fire()
+            weaponsToFire -= 1
+
+         if weaponsToFire <= 0:
+            return
 
          
       

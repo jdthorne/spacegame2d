@@ -1,12 +1,12 @@
 swarmship = """\
-   <PD>
-  <PCPP>
-   <PD>
+   <P>
+  <PCDPP>
+   <P>
 """
 
 ships = []
-for i in range(12):
-  ships.append( swarmship )
+for i in range(13):
+  ships.append( ("Swarmship", swarmship) )
 
 def fleet():
   return ships

@@ -9,6 +9,9 @@ def calculatePowerLevelForSmoothApproach(distance, currentSpeed, maxPositiveAcce
    if abs(distance) < 0.000001:
       return 0.0
 
+   if maxPositiveAcceleration == 0 or maxNegativeAcceleration == 0:
+      return 0.0
+
    #if distance < 0 and abs(distance) < abs(currentSpeed * 4.0):
    #   return 0.0
 
@@ -72,6 +75,7 @@ class Autopilot:
       self.weaponsEngaged = False
       self.engineCount = len(self.ship.engines())
       self.analysis = Analysis(self.ship)
+      self.currentStatus = (0, "")
       
    def run(self):      
       if self.engineCount != len(self.ship.engines()):
@@ -86,6 +90,12 @@ class Autopilot:
          self.thrustToTargetRadius()
          self.fireWeaponsIfPossible()
    
+   def status(self):
+      if self.target is None:
+         return (0.0, "ready")
+      else:
+         return self.currentStatus
+
    # ========== HIGH-LEVEL CONTROLS =============
    def acquireTarget(self):
       closestTarget = None
@@ -110,6 +120,7 @@ class Autopilot:
                                           log=False)
          
       self.powerEngines(power, self.analysis.positiveDizzyEngines, self.analysis.negativeDizzyEngines)
+      self.currentStatus = (0.2, "acquiring target")
    
    
    def thrustToTargetRadius(self):
@@ -126,18 +137,20 @@ class Autopilot:
                                            log=False)
    
          self.powerEngines(power, self.analysis.forwardEngines, self.analysis.reverseEngines)
+         self.currentStatus = (0.5, "approaching")
       
    def fireWeaponsIfPossible(self):
       direction = abs(vectorDirection(self.target.vector()))
       range = abs(vectorMagnitude(self.target.vector()))
       
-      if direction < 0.1 and range < 2500:
+      if direction < 0.1 and range < 3500:
          self.weaponsEngaged = True
 
       if direction > 0.3 or range > 6000:
          self.weaponsEngaged = False
          
       if self.weaponsEngaged:
+         self.currentStatus = (1.0, "firing")
          self.fireAllWeapons()
 
    # =============== LOW-LEVEL COMMANDS ===============

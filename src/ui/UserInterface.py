@@ -20,6 +20,9 @@ class UserInterface:
       @window.event
       def on_draw():
          self.draw()
+      @window.event
+      def on_mouse_motion(x, y, dx, dy):
+         self.handleMouseMotion(x, y, dx, dy)
 
       pyglet.clock.set_fps_limit(60.0)
       pyglet.clock.schedule_interval(self.tick, 1/30.0)
@@ -43,3 +46,6 @@ class UserInterface:
       Sprite.drawBatch()
 
       self.fpsDisplay.draw()
+
+   def handleMouseMotion(self, x, y, dx, dy):
+      self.currentDisplay.handleMouseMotion(x, y, dx, dy)

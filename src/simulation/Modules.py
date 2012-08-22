@@ -37,13 +37,18 @@ class FlightComputer(Module):
 
    def simulate(self):
       if self.autopilot == None:
-         self.autopilot = self.createAutopilot(ShipControls.ShipWrapper(self.parent))
+         self.shipWrapper = ShipControls.ShipWrapper(self.parent)
+         self.autopilot = self.createAutopilot(self.shipWrapper)
 
       self.runAutopilot()
 
    @Timing.timedFunction
    def runAutopilot(self):
+      if self.parent.damaged:
+         self.shipWrapper.updateAll()
+
       self.autopilot.run()
+      self.parent.status = self.autopilot.status()
 
 class Engine(Module):
    def __init__(self, parent, position, thrustVector):
@@ -89,6 +94,9 @@ class PlasmaCannon(Module):
    def simulate(self):
       if self.recharge > 0:
          self.recharge -= 1
+
+   def ready(self):
+      return (self.recharge == 0)
          
 class Deflector(Module):
    def __init__(self, parent, position):

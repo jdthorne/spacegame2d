@@ -45,14 +45,14 @@ class Simulation:
       fleet = fleetModule.fleet()
       autopilot = autopilotModule.Autopilot 
 
-      for ship in fleet:
-         self.loadShip(ship, autopilot, fleetId)
+      for name, design in fleet:
+         self.loadShip(name, design, autopilot, fleetId)
 
-   def loadShip(self, design, autopilot, fleetId):
+   def loadShip(self, name, design, autopilot, fleetId):
       position = self.randomPosition()
       rotation = self.world.randomValue(0, 1000) * (math.pi / 1000.0)
 
-      ship = Ship.Ship(design, autopilot, position, rotation, self.world, fleetId)
+      ship = Ship.Ship(name, design, autopilot, position, rotation, self.world, fleetId)
       self.world.addObject(ship)
 
    def randomPosition(self):
