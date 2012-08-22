@@ -24,7 +24,7 @@ class UserInterface:
       def on_mouse_motion(x, y, dx, dy):
          self.handleMouseMotion(x, y, dx, dy)
 
-      pyglet.clock.set_fps_limit(60.0)
+      pyglet.clock.set_fps_limit(30.0)
       pyglet.clock.schedule_interval(self.tick, 1/30.0)
 
       self.window = window

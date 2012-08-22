@@ -11,22 +11,26 @@ class World:
    def scan(self):
       return self.combatants
       
-   def addObject(self, object):
-      self.all.append(object)
-
+   def prepareObject(self, object):
       if object.combatTeam != -1:
-         self.combatants.append(object)
-
          if not object.combatTeam in self.combatTeams:
             self.combatTeams[object.combatTeam] = []
 
          self.combatTeams[object.combatTeam].append(object)
+
+   def addObject(self, object):
+      object.inWorld = True
+
+      if object.combatTeam != -1:
+         self.combatants.append(object)
+
+      self.all.append(object)
       
    def simulate(self):
       for object in self.all:
          if object.destroyed:
             self.all.remove(object)
-            
+
             if object.combatTeam != -1:
                self.combatants.remove(object)
             
@@ -44,6 +48,7 @@ class World:
       return False
       
 class WorldItem:
+   inWorld = False
    isShip = False
    exciting = False
    destroyed = False

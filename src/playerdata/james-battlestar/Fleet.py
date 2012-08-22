@@ -1,6 +1,6 @@
 battlestar = """\
- <PDDP
-  <PP
+ <PDDP>
+  <PP>
   <PDP
   <PDP
   <PDP
@@ -10,9 +10,9 @@ SDSCPPPSDS
   PDDP>
    PP>
    PDP>
-   PDP>
-   PDP>
+  <PDP>
+  <PDP>
 """
 
 def fleet():
-   return [ ("Goliath", battlestar) ]
+   return [ ("Ong-mar", battlestar) ]

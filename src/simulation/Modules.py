@@ -13,7 +13,7 @@ class Module:
       self.parent = parent
       self.position = position
       self.mass = mass
- 
+
    def __eq__(self, rhs):
       return self is rhs
 
@@ -89,7 +89,7 @@ class PlasmaCannon(Module):
       offset = vectorRotate(bulletStart, self.parent.rotation)
       position = vectorAdd(self.parent.position, offset)
       
-      self.parent.world.addObject(Misc.Bullet(position, vectorRotate([Ship.MODULE_SIZE, 0], self.parent.rotation), self.parent))
+      self.parent.world.addObject(Misc.Bullet(position, vectorRotate([Misc.BULLET_SPEED, 0], self.parent.rotation), self.parent))
    
    def simulate(self):
       if self.recharge > 0:
@@ -105,6 +105,4 @@ class Deflector(Module):
       self.isDeflector = True
    
    def simulate(self):
-      powerupTime = 5.0 * 90.0
-
-      self.parent.availableDeflectorPower += 1.0/powerupTime
+      pass

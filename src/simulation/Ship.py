@@ -14,12 +14,22 @@ import Cache
 import Timing
 import random
 
-MODULE_SIZE = 40
+nextShipId = 0
+
+SHIP_SIZE = 1200.0
 
 class Ship(Physics.RigidBody):
-   def __init__(self, name, design, autopilot, position, rotation, world, fleetId):
+   def __init__(self, name, design, autopilot, position, rotation, velocity, world, fleetId):
       Physics.RigidBody.__init__(self, position)
       
+      global nextShipId
+      self.id = nextShipId
+      nextShipId += 1
+
+      self.status = (0, "")
+      self.jumpComplete = False
+
+      self.ftlTime = 25
       self.name = name
       self.combatTeam = fleetId
       self.exciting = True
@@ -27,6 +37,7 @@ class Ship(Physics.RigidBody):
       self.rotation = rotation
       self.isShip = True
       self.availableDeflectorPower = 1000.0
+      self.velocity = velocity
 
       self.damaged = False
       self.hasTakenDamage = False
@@ -35,8 +46,8 @@ class Ship(Physics.RigidBody):
       self.modules = []
       
       for moduleType, x, y in allModules(design):
-         x *= MODULE_SIZE
-         y *= MODULE_SIZE
+         x *= Misc.MODULE_SIZE
+         y *= Misc.MODULE_SIZE
          module = None
          
          if moduleType == "C":
@@ -66,6 +77,9 @@ class Ship(Physics.RigidBody):
       random.shuffle(self.weapons)
       
       self.recalculateModules()
+
+   def __hash__(self):
+      return self.id
       
    def scanForTargets(self):
       return [ t for t in self.world.scan() if not (t is self) ]
@@ -105,13 +119,14 @@ class Ship(Physics.RigidBody):
       self.calculatedMomentOfInertia = result
 
       # Calculate other stats
-      self.maxDeflectorPower = len([ m for m in self.modules if isinstance(m, Modules.Deflector) ])
-      self.collisionRadius = max([ vectorMagnitude(m.position) for m in self.modules ]) + MODULE_SIZE
+      self.maxDeflectorPower = 1.0 + len([ m for m in self.modules if isinstance(m, Modules.Deflector) ])
+      self.collisionRadius = max([ vectorMagnitude(m.position) for m in self.modules ]) + Misc.MODULE_SIZE
 
    @Timing.timedFunction
    def simulate(self):
       Physics.RigidBody.simulate(self)
-      HUD.frameOfReference = (self.position, self.rotation)
+
+      HUD.frameOfReference = (self.position, self.rotation, self)
       
       self.simulateAllModules()
       self.simulateWorldEffects()
@@ -124,7 +139,14 @@ class Ship(Physics.RigidBody):
 
    @Timing.timedFunction
    def simulateWorldEffects(self):
+      if self.ftlTime > 0:
+         self.ftlTime -= 1
+
       self.damaged = False
+
+      powerupTime = 5.0 * 90.0
+
+      self.availableDeflectorPower += self.maxDeflectorPower / powerupTime
       self.availableDeflectorPower = Scalar.bound(0, self.availableDeflectorPower, self.maxDeflectorPower)
       self.currentDeflectorPower = self.availableDeflectorPower / self.maxDeflectorPower
 
@@ -133,7 +155,7 @@ class Ship(Physics.RigidBody):
             continue
 
          distance = vectorDistance(item.position, self.position)
-         if abs(distance) < 900.0:
+         if abs(distance) < SHIP_SIZE:
             self.simulateDeflectors(item, distance)
 
          if abs(distance) < self.collisionRadius:
@@ -154,17 +176,17 @@ class Ship(Physics.RigidBody):
          item.velocity = self.velocity
          return
 
-      power = (900.0 - distance) / 900.0
+      power = (SHIP_SIZE - distance) / SHIP_SIZE
       power = power * power * (self.availableDeflectorPower / self.maxDeflectorPower)
 
-      mix = power
+      mix = power * 2
       item.velocity = vectorAdd(vectorScale(item.velocity, 1.0-mix), vectorScale(self.velocity, mix))
 
-      self.availableDeflectorPower -= (power * delta * 0.004)
+      self.availableDeflectorPower -= (power * delta * 0.002)
 
    def simulateCollisions(self, item):
       radius = (2.0 * vectorMagnitude(item.velocity))
-      radius = Scalar.bound(MODULE_SIZE * 2, radius, MODULE_SIZE * 10)
+      radius = Scalar.bound(Misc.MODULE_SIZE * 2, radius, Misc.MODULE_SIZE * 10)
 
       for module in self.modules:
          distance = abs(vectorDistance(item.position, module.absolutePosition()))
@@ -181,12 +203,12 @@ class Ship(Physics.RigidBody):
    @Timing.timedFunction
    def simulateDamage(self):
       if self.destroyed:
+         self.world.addObject(Misc.Explosion(self.flightComputer.absolutePosition(), 
+                                             self.velocity, 
+                                             125 + (15 * len(self.modules))))
          for module in self.modules:
             self.explodeModule(module)
             
-         self.world.addObject(Misc.Explosion(self.flightComputer.absolutePosition(), 
-                                             self.velocity, 
-                                             250))
          return
    
       connectedModules = []
@@ -196,7 +218,7 @@ class Ship(Physics.RigidBody):
                continue
             
             distance = vectorMagnitude(vectorOffset(start.position, m.position))
-            if distance < MODULE_SIZE * 1.2:
+            if distance < Misc.MODULE_SIZE * 1.2:
                connectedModules.append(m)
                recurseModules(m)
       

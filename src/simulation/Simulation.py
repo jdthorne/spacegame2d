@@ -7,14 +7,16 @@ import Ship
 from Vector import *
 import Cache
 import Timing
+import random
 
-worldSize = 4500
+WORLD_SIZE = 9000
 
 class Simulation:
    def __init__(self, fleets, seed):
       self.fleets = fleets
       self.seed = seed
 
+      self.shipsToJump = []
       self.world = World.World(seed)
 
       i = 0
@@ -22,7 +24,12 @@ class Simulation:
          self.loadFleet(fleet, i)
          i += 1
 
+      random.shuffle(self.shipsToJump)
+
    def complete(self):
+      if len(self.shipsToJump) > 0:
+         return False
+
       teams = []
       for o in self.world.all:
          if not o.combatTeam in teams:
@@ -51,13 +58,15 @@ class Simulation:
    def loadShip(self, name, design, autopilot, fleetId):
       position = self.randomPosition()
       rotation = self.world.randomValue(0, 1000) * (math.pi / 1000.0)
+      velocity = ( self.world.randomValue(-6.0, 6.0) , self.world.randomValue(-6.0, 6.0) )
 
-      ship = Ship.Ship(name, design, autopilot, position, rotation, self.world, fleetId)
-      self.world.addObject(ship)
+      ship = Ship.Ship(name, design, autopilot, position, rotation, velocity, self.world, fleetId)
+      self.world.prepareObject(ship)
+      self.shipsToJump.append(ship)
 
    def randomPosition(self):
       while True:
-         newPosition = (self.world.randomValue(-worldSize, worldSize), self.world.randomValue(-worldSize, worldSize))
+         newPosition = (self.world.randomValue(-WORLD_SIZE, WORLD_SIZE), self.world.randomValue(-WORLD_SIZE, WORLD_SIZE))
          
          minDistance = 999999999
          for obj in self.world.all:
@@ -66,11 +75,21 @@ class Simulation:
             if distance < minDistance:
                minDistance = distance
          
-         if minDistance > 500:
+         if minDistance > 5000:
             return newPosition
 
    @Timing.timedFunction
    def tick(self):
+      if len(self.shipsToJump) > 0 and self.world.randomValue(0, 10) == 0:
+         self.jumpNextShip()
+
       Cache.clear()
       self.world.simulate()
+
+   def jumpNextShip(self):
+      ship = self.shipsToJump[0]
+      del self.shipsToJump[0]
+
+      self.world.addObject(ship)
+
 

@@ -3,45 +3,10 @@ import math
 
 import HUD
 import Scalar
+import Misc
+import Autolib
 from Vector import *
 
-def calculatePowerLevelForSmoothApproach(distance, currentSpeed, maxPositiveAcceleration, maxNegativeAcceleration, log=False):
-   if abs(distance) < 0.000001:
-      return 0.0
-
-   if maxPositiveAcceleration == 0 or maxNegativeAcceleration == 0:
-      return 0.0
-
-   #if distance < 0 and abs(distance) < abs(currentSpeed * 4.0):
-   #   return 0.0
-
-   targetAcceleration = -(currentSpeed**2) / (2*distance)
-   maxAppropriateAcceleration = maxNegativeAcceleration if distance < 0 else maxPositiveAcceleration
-   maxAppropriateBraking = maxPositiveAcceleration if distance < 0 else maxNegativeAcceleration
-   
-   info = "[ Distance = %07.2f, Speed = %.5f, Target Acc = %.5f, Max Braking = %.5f ]" % (distance, currentSpeed, targetAcceleration, maxAppropriateBraking)
-   
-   if log:
-      print info, 
-
-   # Moving away from the target - use full power towards it
-   if Scalar.sign(currentSpeed) != Scalar.sign(distance):
-      if log:
-         print "BURN (moving away)"
-   
-      return 1.0 * Scalar.sign(distance)
-   
-   # We have lots of time to brake, so let's accelerate instead
-   elif abs(targetAcceleration) < abs(maxAppropriateBraking * 0.75):
-      if log:
-         print "BURN (have time)"
-   
-      return 1.0 * Scalar.sign(distance)
-      
-   # We should brake now!
-   if log:
-      print "BRAKE"
-   return abs(targetAcceleration / maxAppropriateBraking) * -Scalar.sign(distance)
    
 class Analysis:
    def __init__(self, ship):
@@ -111,13 +76,12 @@ class Autopilot:
       self.target = closestTarget
    
    def rotateToFaceTarget(self):
-      angularDistance = vectorDirection(self.target.vector())
+      angularDistance = vectorDirection(Autolib.interceptVector(self.target))
       angularSpeed = self.ship.spin()
       
-      power = calculatePowerLevelForSmoothApproach(angularDistance, angularSpeed,
+      power = Autolib.powerForSmoothApproach(angularDistance, angularSpeed,
                                         self.analysis.maxPositiveDizzy, 
-                                          self.analysis.maxNegativeDizzy,
-                                          log=False)
+                                          self.analysis.maxNegativeDizzy)
          
       self.powerEngines(power, self.analysis.positiveDizzyEngines, self.analysis.negativeDizzyEngines)
       self.currentStatus = (0.2, "acquiring target")
@@ -125,16 +89,15 @@ class Autopilot:
    
    def thrustToTargetRadius(self):
       if abs(vectorDirection(self.target.vector())) < 0.5:
-         distance = vectorMagnitude(self.target.vector()) - 900
+         distance = vectorMagnitude(self.target.vector()) - (Misc.WEAPON_RANGE / 2.0)
          speed = vectorScalarProjection(self.target.velocity(), [-1, 0])
          
          maxTowardAcceleration = self.analysis.maxRemainingForwardAcceleration()
          maxAwayAcceleration = self.analysis.maxRemainingReverseAcceleration()
          
-         power = calculatePowerLevelForSmoothApproach(distance, speed, 
+         power = Autolib.powerForSmoothApproach(distance, speed, 
                                            maxTowardAcceleration, 
-                                           maxAwayAcceleration,
-                                           log=False)
+                                           maxAwayAcceleration)
    
          self.powerEngines(power, self.analysis.forwardEngines, self.analysis.reverseEngines)
          self.currentStatus = (0.5, "approaching")
@@ -143,10 +106,10 @@ class Autopilot:
       direction = abs(vectorDirection(self.target.vector()))
       range = abs(vectorMagnitude(self.target.vector()))
       
-      if direction < 0.1 and range < 3500:
+      if direction < 0.1 and range < Misc.WEAPON_RANGE:
          self.weaponsEngaged = True
 
-      if direction > 0.3 or range > 6000:
+      if direction > 0.3 or range > Misc.WEAPON_RANGE * 1.5:
          self.weaponsEngaged = False
          
       if self.weaponsEngaged:

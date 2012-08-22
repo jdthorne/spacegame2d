@@ -3,6 +3,8 @@ import math
 
 import HUD
 import Scalar
+import Misc
+import Autolib
 from Vector import *
 
 class Analysis:
@@ -46,6 +48,7 @@ class Autopilot:
       self.clearEngines()
       self.acquireTarget()
       self.spin()
+      self.thrustToTarget()
       self.fireIfAble()
 
    def status(self):
@@ -65,10 +68,10 @@ class Autopilot:
       self.targets = []
 
       for target in self.ship.sensors().scan():
-         if (target.combatTeam() != -1) and (target.combatTeam() != self.ship.combatTeam()) and (target.combatStrength() > 0):
+         if (target.combatTeam() != -1) and (target.combatTeam() != self.ship.combatTeam()):
             distance = vectorMagnitude(target.vector())
 
-            if distance < 2500:
+            if distance < Misc.WEAPON_RANGE:
                self.targets.append(target)
          
             if (closestTarget == None) or (distance < closestRange):
@@ -81,8 +84,14 @@ class Autopilot:
    def spin(self):
       if self.ship.spin() < 0.2:
          self.powerEngines(1.0, self.analysis.positiveDizzyEngines, [])
+
+      elif self.ship.spin() > 0.4:
+         self.powerEngines(-1.0, [], self.analysis.negativeDizzyEngines)
       
    def thrustToTarget(self):
+      if self.target == None:
+         return
+
       if self.targetCount < 4:
          # We're cool - ATTACK
          targetDirection = vectorDirection(self.target.vector())
@@ -94,7 +103,6 @@ class Autopilot:
             averageTargetVector = vectorAdd(target.vector(), averageTargetVector)
 
          targetDirection = vectorDirection(vectorScale(averageTargetVector, -1))
-         print "Running away!", targetDirection
 
       if abs(targetDirection) < 0.6:
          self.powerEngines(1.0, self.analysis.forwardEngines)
@@ -107,10 +115,11 @@ class Autopilot:
       spinSpeed = abs(self.ship.spin() * 0.51)
 
       for target in self.targets:
-         direction = abs(vectorDirection(target.vector()))
-         distance = abs(vectorMagnitude(target.vector()))
+         vector = Autolib.interceptVector(target)
 
-         if direction < spinSpeed and distance < 2500:
+         direction = abs(vectorDirection(vector))
+
+         if direction < spinSpeed:
             self.fireAtTarget()
             return
 
@@ -128,7 +137,7 @@ class Autopilot:
          e.setPower(e.power() - power)
          
    def fireAtTarget(self):
-      weaponsToFire = len(self.ship.weapons()) / self.targetCount
+      weaponsToFire = len(self.ship.weapons()) / Scalar.bound(1, self.targetCount, 3)
       for w in self.ship.weapons():
          if w.ready():
             w.fire()

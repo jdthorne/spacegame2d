@@ -5,7 +5,8 @@ import time
 import Timing
 import Simulation
 
-world = "lolhaxalon2"
+world = time.time()
+#world = "moo"
 fleets = ["james-battlestar", "james-swarm"]
 
 simulation = Simulation.Simulation(fleets, world)

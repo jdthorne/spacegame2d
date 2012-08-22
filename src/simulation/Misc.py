@@ -1,3 +1,4 @@
+import Ship
 import Physics
 import Scalar
 from Vector import *
@@ -17,7 +18,7 @@ class Explosion(Physics.PointBody):
    def simulate(self):
       Physics.PointBody.simulate(self)
 
-      self.life -= 1
+      self.life -= 2
       
       if self.life < 5:
          self.destroyed = True
@@ -28,6 +29,11 @@ class Explosion(Physics.PointBody):
    def solidFor(self, object):
       return False
       
+BULLET_LIFE = 35
+MODULE_SIZE = 40
+BULLET_SPEED = MODULE_SIZE * 3
+
+WEAPON_RANGE = BULLET_SPEED * BULLET_LIFE
 
 class Bullet(Physics.PointBody):
    def __init__(self, position, velocity, owner):
@@ -37,7 +43,7 @@ class Bullet(Physics.PointBody):
       self.velocity = velocity
       self.owner = owner
       
-      self.initialLife = 50
+      self.initialLife = BULLET_LIFE
       self.life = self.initialLife
       
    def mass(self):

@@ -22,26 +22,30 @@ sidebarTextLayer = pyglet.graphics.OrderedGroup(7)
 sidebarTextLayer2 = pyglet.graphics.OrderedGroup(8)
 
 imageLayers = { "computer": moduleLayer,
-             "deflector-field": effectLayer,
-            "deflector": moduleLayer,
-            "engine": moduleLayer,
-            "exhaust": effectLayer,
-            "explosion": effectLayer,
-            "plasma-cannon": moduleLayer,
-            "plasma": effectLayer,
-            "structure-0": structureLayer,
-            "structure-1": structureLayer,
-            "structure-2": structureLayer,
-            "engine-structure": moduleLayer,
-            "sidebar": sidebarLayer,
-            "ship-display": sidebarShipLayer,
-            "team-display-0": sidebarShipLayer,
-            "team-display-1": sidebarShipLayer,
-            "team-display-2": sidebarShipLayer,
-            "ship-deflector": sidebarTextLayer,
-            "ship-ok": sidebarTextLayer2,
-            "ship-damage": sidebarTextLayer2,
-            "background": backgroundLayer,
+                "deflector-field": effectLayer,
+                "deflector": moduleLayer,
+                "engine": moduleLayer,
+                "exhaust": effectLayer,
+                "explosion": effectLayer,
+                "plasma-cannon": moduleLayer,
+                "plasma": effectLayer,
+                "structure-0": structureLayer,
+                "structure-1": structureLayer,
+                "structure-2": structureLayer,
+                "engine-structure": moduleLayer,
+                "sidebar": sidebarLayer,
+                "ship-display": sidebarShipLayer,
+                "team-display-0": sidebarShipLayer,
+                "team-display-1": sidebarShipLayer,
+                "team-display-2": sidebarShipLayer,
+                "ship-deflector": sidebarTextLayer,
+                "ship-ok": sidebarTextLayer2,
+                "ship-damage": sidebarTextLayer2,
+                "background": backgroundLayer,
+                "ftl": moduleLayer,
+                "vector-red": sidebarLayer,
+                "vector-green": sidebarLayer,
+                "vector-blue": sidebarLayer,
            }
 
 images = {}
@@ -54,6 +58,9 @@ for f in os.listdir("./graphics/"):
 
       image = pyglet.image.load("graphics/" + f)
       image.anchor_x, image.anchor_y = (image.width/2, image.height/2)
+
+      if name.startswith("vector"):
+         image.anchor_x = 0
       
       images[name] = image
       availableSprites[name] = []
@@ -87,8 +94,12 @@ def find(name):
       
       return sprite
 
+@Timing.timedFunction
 def draw(name, position, rotation=0.0, scale=1.0, alpha=1.0, hud=False):
-   sprite = find(name)
+   if type(name) is str:
+      sprite = find(name)
+   else:
+      sprite = name
 
    if hud:
       x, y = position 
@@ -124,6 +135,7 @@ def findLabel():
       labels.append(label)
       return label
 
+@Timing.timedFunction
 def drawText(text, position, color=(255,255,255,255), bold=False, align="left"):
    label = findLabel()
 
@@ -144,8 +156,7 @@ def drawText(text, position, color=(255,255,255,255), bold=False, align="left"):
    if label.anchor_x != align:
       label.anchor_x = align
 
-   label.draw()
-
+@Timing.timedFunction
 def freeAll():
    global labelId
 
@@ -155,6 +166,7 @@ def freeAll():
 
    labelId = -1
 
+@Timing.timedFunction
 def drawBatch():
    if labelId < len(labels) - 1:
       for i in range(labelId+1, len(labels)):

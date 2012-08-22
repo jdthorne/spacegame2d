@@ -2,6 +2,8 @@
 import Scalar
 from Vector import *
 import Timing
+import Modules
+import Misc
 
 class EngineWrapper:
    def __init__(self, realEngine):
@@ -94,5 +96,6 @@ class ShipWrapper:
    def combatTeam(self):
       return self._ship.combatTeam
       
-      
+   def weaponRange(self):
+      return Misc.WEAPON_RANGE
       
