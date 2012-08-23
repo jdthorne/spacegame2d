@@ -1,5 +1,8 @@
+
+def scalarMix(factor, a, b):
+   return (factor * a) + ((1.0-factor)*b)
    
-def sign(number):
+def scalarSign(number):
    if number > 0:
       return 1
    if number < 0:
@@ -7,7 +10,7 @@ def sign(number):
       
    return 0
 
-def bound(min, number, max):
+def scalarBound(min, number, max):
    if number < min:
       return min
    if number > max:

@@ -5,23 +5,23 @@ import time
 import Timing
 import Simulation
 
-world = time.time()
-#world = "moo"
-fleets = ["james-battlestar", "james-swarm"]
-
-simulation = Simulation.Simulation(fleets, world)
-
 ui = ("--ui" in sys.argv)
 if ui:
-   import SimulationDisplay
    import UserInterface
-   simulationDisplay = SimulationDisplay.SimulationDisplay(simulation)
+   import FleetDesigner
+
+   fleetDesigner = FleetDesigner.FleetDesigner("james-battlestar")
 
    ui = UserInterface.UserInterface()
-   ui.display(simulationDisplay)
+   ui.display(fleetDesigner)
    ui.start()
 
 else:
+   world = "moo"
+   fleets = ["james-battlestar", "james-swarm"]
+
+   simulation = Simulation.Simulation(fleets, world)
+
    start = time.time()
    printTime = start
    frames = 0

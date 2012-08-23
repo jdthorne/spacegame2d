@@ -1,6 +1,6 @@
 import Ship
 import Physics
-import Scalar
+from Scalar import *
 from Vector import *
 
 class Explosion(Physics.PointBody):

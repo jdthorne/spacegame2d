@@ -3,7 +3,7 @@
 import math
 
 import World
-import Scalar
+from Scalar import *
 from Vector import *
 
 class PointBody(World.WorldItem):

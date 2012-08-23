@@ -1,4 +1,4 @@
-import Scalar
+from Scalar import *
 import Misc
 import HUD
 from Vector import *
@@ -32,12 +32,12 @@ def powerForSmoothApproach(distance, currentSpeed, maxPositiveAcceleration, maxN
    maxAppropriateBraking = maxPositiveAcceleration if distance < 0 else maxNegativeAcceleration
    
    # Moving away from the target - use full power towards it
-   if Scalar.sign(currentSpeed) != Scalar.sign(distance):
-      return 1.0 * Scalar.sign(distance)
+   if scalarSign(currentSpeed) != scalarSign(distance):
+      return 1.0 * scalarSign(distance)
    
    # We have lots of time to brake, so let's accelerate instead
    elif abs(targetAcceleration) < abs(maxAppropriateBraking * 0.75):
-      return 1.0 * Scalar.sign(distance)
+      return 1.0 * scalarSign(distance)
       
    # We should brake now!
-   return abs(targetAcceleration / maxAppropriateBraking) * -Scalar.sign(distance)
+   return abs(targetAcceleration / maxAppropriateBraking) * -scalarSign(distance)

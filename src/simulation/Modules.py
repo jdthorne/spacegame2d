@@ -1,5 +1,5 @@
 from Vector import *
-import Scalar
+from Scalar import *
 import ShipControls
 import Misc
 import Ship
@@ -35,6 +35,10 @@ class FlightComputer(Module):
       self.autopilot = None     
       self.createAutopilot = autopilot
 
+   def installAutopilot(self, autopilot):
+      self.autopilot = None     
+      self.createAutopilot = autopilot      
+
    def simulate(self):
       if self.autopilot == None:
          self.shipWrapper = ShipControls.ShipWrapper(self.parent)
@@ -63,7 +67,7 @@ class Engine(Module):
       return vectorScale(self.thrustVector, self.power)
       
    def simulate(self):
-      self.power = Scalar.bound(0, self.power, 1)
+      self.power = scalarBound(0, self.power, 1)
    
       self.parent.applyLocalForce(self.currentThrust(), self.position)
       

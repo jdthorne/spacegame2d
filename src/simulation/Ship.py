@@ -3,7 +3,7 @@ import math
 
 import HUD
 from Vector import *
-import Scalar
+from Scalar import *
 import World
 import Misc
 
@@ -21,7 +21,7 @@ SHIP_SIZE = 1200.0
 class Ship(Physics.RigidBody):
    def __init__(self, name, design, autopilot, position, rotation, velocity, world, fleetId):
       Physics.RigidBody.__init__(self, position)
-      
+
       global nextShipId
       self.id = nextShipId
       nextShipId += 1
@@ -77,6 +77,9 @@ class Ship(Physics.RigidBody):
       random.shuffle(self.weapons)
       
       self.recalculateModules()
+
+   def installAutopilot(self, autopilot):
+      self.flightComputer.installAutopilot(autopilot)
 
    def __hash__(self):
       return self.id
@@ -147,7 +150,7 @@ class Ship(Physics.RigidBody):
       powerupTime = 5.0 * 90.0
 
       self.availableDeflectorPower += self.maxDeflectorPower / powerupTime
-      self.availableDeflectorPower = Scalar.bound(0, self.availableDeflectorPower, self.maxDeflectorPower)
+      self.availableDeflectorPower = scalarBound(0, self.availableDeflectorPower, self.maxDeflectorPower)
       self.currentDeflectorPower = self.availableDeflectorPower / self.maxDeflectorPower
 
       for item in self.world.all:
@@ -186,7 +189,7 @@ class Ship(Physics.RigidBody):
 
    def simulateCollisions(self, item):
       radius = (2.0 * vectorMagnitude(item.velocity))
-      radius = Scalar.bound(Misc.MODULE_SIZE * 2, radius, Misc.MODULE_SIZE * 10)
+      radius = scalarBound(Misc.MODULE_SIZE * 2, radius, Misc.MODULE_SIZE * 10)
 
       for module in self.modules:
          distance = abs(vectorDistance(item.position, module.absolutePosition()))

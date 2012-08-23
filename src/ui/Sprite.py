@@ -1,9 +1,12 @@
 import pyglet
 import os
 import math
+import Misc
+import UserInterface
 
 from Vector import *
 
+actualWorldPosition = (200, 200)
 worldPosition = (200, 200)
 worldScale = 0.1
 
@@ -35,6 +38,10 @@ imageLayers = { "computer": moduleLayer,
                 "engine-structure": moduleLayer,
                 "sidebar": sidebarLayer,
                 "ship-display": sidebarShipLayer,
+                "ship-highlight-0": sidebarShipLayer,
+                "ship-highlight-1": sidebarShipLayer,
+                "ship-highlight-2": sidebarShipLayer,
+                "team-display-plain": sidebarShipLayer,
                 "team-display-0": sidebarShipLayer,
                 "team-display-1": sidebarShipLayer,
                 "team-display-2": sidebarShipLayer,
@@ -136,7 +143,7 @@ def findLabel():
       return label
 
 @Timing.timedFunction
-def drawText(text, position, color=(255,255,255,255), bold=False, align="left"):
+def drawText(text, position, color=(0,0,0,255), bold=False, align="left"):
    label = findLabel()
 
    if label.text != text:
@@ -174,3 +181,76 @@ def drawBatch():
 
    batch.draw()
    textBatch.draw()
+
+def orientWorld(world, focusedObject=None, padding=Misc.WEAPON_RANGE):
+   global worldScale
+   global worldPosition
+   global actualWorldPosition
+
+   if focusedObject != None:
+      radius = padding
+      x, y = focusedObject.position
+
+      topEdge = y + radius
+      bottomEdge = y - radius
+      leftEdge = x - radius
+      rightEdge = x + radius
+
+      mixSpeed = 0.4
+
+   elif len(world.shipsToJump) > 0:
+      leftEdge = -Simulation.WORLD_SIZE
+      rightEdge = Simulation.WORLD_SIZE
+
+      bottomEdge = -Simulation.WORLD_SIZE
+      topEdge = Simulation.WORLD_SIZE
+
+      mixSpeed = 0.4
+
+   else:
+      xMin, yMin = (9999999, 9999999)
+      xMax, yMax = (-9999999, -9999999)
+      for o in world.all:
+         if o.exciting and not o.destroyed:
+            x, y = o.position
+            if x < xMin:
+               xMin = x
+            if x > xMax:
+               xMax = x
+               
+            if y < yMin:
+               yMin = y
+            if y > yMax:
+               yMax = y
+            
+      xMin -= padding
+      yMin -= padding
+      xMax += padding
+      yMax += padding
+
+      topEdge = yMax
+      bottomEdge = yMin
+      leftEdge = xMin
+      rightEdge = xMax
+
+      mixSpeed = 0.05
+
+   # Calculate scale based on edges
+   xScale = 0.75*(1280-480) / abs(rightEdge - leftEdge)
+   yScale = 0.75*720 / abs(topEdge - bottomEdge)
+   scale = min(xScale, yScale)
+
+   # Calculate center based on edges
+   center = ( -(rightEdge + leftEdge)/2 , -(topEdge + bottomEdge)/2 )
+
+   mixA = 1.0 - mixSpeed
+   mixB = mixSpeed
+   worldScale = (mixA * worldScale) + (mixB * scale)
+
+   actualWorldPosition = vectorAdd(vectorScale(actualWorldPosition, mixA), vectorScale(center, mixB))
+
+   centerX = (UserInterface.leftSidebar.x + UserInterface.rightSidebar.x) / 2
+   viewWindowCenter = (centerX, 720/2)
+   worldPosition = vectorAdd(actualWorldPosition, vectorScale(viewWindowCenter, 1.0/worldScale))
+
+

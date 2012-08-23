@@ -1,5 +1,5 @@
 
-import Scalar
+from Scalar import *
 from Vector import *
 import Timing
 import Modules

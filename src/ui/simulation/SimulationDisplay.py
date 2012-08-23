@@ -1,6 +1,6 @@
 import Render
 import Sprite
-import Scalar
+from Scalar import *
 import math
 from Vector import *
 import UserInterface
@@ -23,8 +23,6 @@ class SimulationDisplay:
       self.bottomEdge = -5000
 
    def draw(self):
-      Sprite.draw("background", position=UserInterface.halfWindowSize, hud=True)
-
       self.orientWorld()
       for item in self.simulation.world.all:
          Render.render(item)
@@ -35,7 +33,6 @@ class SimulationDisplay:
    def drawSidebar(self):
       sidebarX = UserInterface.windowSize[0] - 240/2
       sidebarY = UserInterface.windowSize[1]/2
-      Sprite.draw("sidebar", position=(sidebarX, sidebarY), hud=True)
 
       self.shipY = UserInterface.windowSize[1] - 30
 
@@ -62,7 +59,7 @@ class SimulationDisplay:
          exponentialSize = 1.0 - (1.0 / (ship.maxDeflectorPower - 1))
          deflectorWidth = 12 + (exponentialSize * (50-12))
 
-         power = Scalar.bound(0, ship.availableDeflectorPower / ship.maxDeflectorPower, 1.0)
+         power = scalarBound(0, ship.availableDeflectorPower / ship.maxDeflectorPower, 1.0)
          delta = int(power * deflectorWidth)
 
          statusAlpha, status = ship.status
@@ -73,7 +70,7 @@ class SimulationDisplay:
          else:
             Sprite.draw("ship-damage", position=(UserInterface.windowSize[0] - 5, self.shipY), hud=True)
 
-         statusColor = (0, 0, 0, int(Scalar.bound(0.2,statusAlpha,1.0)*255))
+         statusColor = (0, 0, 0, int(scalarBound(0.2,statusAlpha,1.0)*255))
 
          Sprite.drawText(ship.name, position=(sidebarX - 110, self.shipY), bold=True, color=color)
          Sprite.drawText(status.lower(), position=(sidebarX - 20, self.shipY), bold=False, color=statusColor)
@@ -84,73 +81,6 @@ class SimulationDisplay:
    def tick(self, dt):
       HUD.clear()
       self.simulation.tick()
-
-   def orientWorld(self):
-      world = self.simulation.world 
-
-      if self.zoomedShip != None:
-         radius = Misc.WEAPON_RANGE * 0.8
-         x, y = self.zoomedShip.position
-
-         topEdge = y + radius
-         bottomEdge = y - radius
-         leftEdge = x - radius
-         rightEdge = x + radius
-
-         mixSpeed = 0.4
-
-      elif len(self.simulation.shipsToJump) > 0:
-         leftEdge = -Simulation.WORLD_SIZE
-         rightEdge = Simulation.WORLD_SIZE
-
-         bottomEdge = -Simulation.WORLD_SIZE
-         topEdge = Simulation.WORLD_SIZE
-
-         mixSpeed = 0.4
-
-      else:
-         xMin, yMin = (9999999, 9999999)
-         xMax, yMax = (-9999999, -9999999)
-         for o in world.all:
-            if o.exciting and not o.destroyed:
-               x, y = o.position
-               if x < xMin:
-                  xMin = x
-               if x > xMax:
-                  xMax = x
-                  
-               if y < yMin:
-                  yMin = y
-               if y > yMax:
-                  yMax = y
-               
-         padding = 2000
-         xMin -= padding
-         yMin -= padding
-         xMax += padding
-         yMax += padding
-
-         topEdge = yMax
-         bottomEdge = yMin
-         leftEdge = xMin
-         rightEdge = xMax
-
-         mixSpeed = 0.05
-
-      # Calculate scale based on edges
-      xScale = 0.75*(1280-240) / abs(rightEdge - leftEdge)
-      yScale = 0.75*720 / abs(topEdge - bottomEdge)
-      scale = min(xScale, yScale)
-
-      # Calculate center based on edges
-      center = ( -(rightEdge + leftEdge)/2 , -(topEdge + bottomEdge)/2 )
-
-      mixA = 1.0 - mixSpeed
-      mixB = mixSpeed
-      Sprite.worldScale = (mixA * Sprite.worldScale) + (mixB * scale)
-      
-      center = vectorAdd(center, vectorScale(viewWindowCenter, 1.0/scale))
-      Sprite.worldPosition = vectorAdd(vectorScale(Sprite.worldPosition, mixA), vectorScale(center, mixB))
 
       #if self.zoomedShip != None:
       #   Sprite.worldScale = 0.1

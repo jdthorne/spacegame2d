@@ -1,0 +1,11 @@
+{
+  "name": "Swarm of DEATH",
+  "ships": [
+    { 
+      "name": "Swarmer",
+      "count": 15,
+      "autopilot": "Standard",
+      "design": " <PP>\n<PCPDP>\n <PP>"
+    }
+  ]
+}

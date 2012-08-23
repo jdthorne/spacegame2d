@@ -2,7 +2,7 @@
 import math
 
 import HUD
-import Scalar
+from Scalar import *
 import Misc
 import Autolib
 from Vector import *
@@ -137,7 +137,7 @@ class Autopilot:
          e.setPower(e.power() - power)
          
    def fireAtTarget(self):
-      weaponsToFire = len(self.ship.weapons()) / Scalar.bound(1, self.targetCount, 3)
+      weaponsToFire = len(self.ship.weapons()) / scalarBound(1, self.targetCount, 3)
       for w in self.ship.weapons():
          if w.ready():
             w.fire()

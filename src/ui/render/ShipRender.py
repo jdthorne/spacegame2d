@@ -1,6 +1,6 @@
 from Vector import *
 from pyglet.gl import *
-import Scalar
+from Scalar import *
 import math
 import Ship
 import Sprite
@@ -9,15 +9,20 @@ import Misc
 
 # ======================= STRUCTURAL/CACHING STUFF =========================
 
+def isWeapon(module):
+   return module.__class__.__name__ == "PlasmaCannon"
 def isComputer(module):
    return module.__class__.__name__ == "FlightComputer"
-
 def isEngine(module):
    return module.__class__.__name__ == "Engine"
+def isDeflector(module):
+   return module.__class__.__name__ == "Deflector"
 
 def renderStructureToSprite(ship):
-   image = pyglet.image.Texture.create(1024, 1024)
-   offset = (512, 512)
+   size = (768, 768)
+
+   image = pyglet.image.Texture.create(size[0], size[1])
+   offset = vectorScale(size, 0.5)
 
    imagetex = image.get_texture()
    texfrmbuf =(GLuint*1)()
@@ -46,8 +51,16 @@ def renderStructureToSprite(ship):
          else:
             Sprite.images["engine-structure@180"].blit(x, y)
 
-      elif isComputer(module):
+   for module in ship.modules:
+      x, y = vectorAdd(module.position, offset)
+      x, y = (int(x), int(y))
+
+      if isComputer(module):
          Sprite.images["computer"].blit(x, y)
+      elif isWeapon(module):
+         Sprite.images["plasma-cannon"].blit(x, y)
+      elif isDeflector(module):
+         Sprite.images["deflector"].blit(x, y)
 
    glFlush()
    glDisable(GL_BLEND)
@@ -67,7 +80,7 @@ def drawEngineFlame(engine):
    else:
       engine.onTime -= 2
 
-   engine.onTime = Scalar.bound(0, engine.onTime, 20)
+   engine.onTime = scalarBound(0, engine.onTime, 20)
 
    onPower = engine.onTime / 20.0
    if onPower > 0.05:
@@ -114,8 +127,10 @@ def drawShip(ship):
    drawStructure(ship)
    drawEffects(ship)
 
-
-
+def cleanAll():
+   ships = []
+   for ship in structures.copy():
+      clean(ship)
 
 
 """

@@ -4,6 +4,7 @@ from Vector import *
 class World:
    def __init__(self, seed=500):
       random.seed(seed)
+      self.shipsToJump = []
       self.all = []
       self.combatants = []
       self.combatTeams = {}
@@ -11,6 +12,16 @@ class World:
    def scan(self):
       return self.combatants
       
+   def addToHyperspace(self, ship):
+      self.prepareObject(ship)
+      self.shipsToJump.append(ship)
+
+   def jumpNextShip(self):
+      ship = self.shipsToJump[0]
+      del self.shipsToJump[0]
+
+      self.addObject(ship)
+
    def prepareObject(self, object):
       if object.combatTeam != -1:
          if not object.combatTeam in self.combatTeams:
@@ -27,6 +38,9 @@ class World:
       self.all.append(object)
       
    def simulate(self):
+      if len(self.shipsToJump) > 0 and self.randomValue(0, 10) == 0:
+         self.jumpNextShip()
+
       for object in self.all:
          if object.destroyed:
             self.all.remove(object)
@@ -46,6 +60,7 @@ class World:
             return True
       
       return False
+
       
 class WorldItem:
    inWorld = False

@@ -2,7 +2,7 @@
 import math
 
 import Sprite
-import Scalar
+from Scalar import *
 from Vector import *
 
 frameOfReference = ([0, 0], 0, None)

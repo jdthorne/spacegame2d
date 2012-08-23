@@ -1,5 +1,5 @@
 from Vector import *
-import Scalar
+from Scalar import *
 import math
 import Sprite
 

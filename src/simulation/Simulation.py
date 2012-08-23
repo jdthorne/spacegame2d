@@ -8,26 +8,34 @@ from Vector import *
 import Cache
 import Timing
 import random
+import Misc
 
-WORLD_SIZE = 9000
+WORLD_SIZE = Misc.WEAPON_RANGE
 
 class Simulation:
-   def __init__(self, fleets, seed):
+   def __init__(self, seed, fleets, existingShips=[]):
       self.fleets = fleets
       self.seed = seed
 
-      self.shipsToJump = []
       self.world = World.World(seed)
 
-      i = 0
-      for fleet in fleets:
-         self.loadFleet(fleet, i)
-         i += 1
+      teamId = 0
+      for ship in existingShips:
+         ship.world = self.world
+         self.world.prepareObject(ship)
+         self.world.addObject(ship)
 
-      random.shuffle(self.shipsToJump)
+      if len(existingShips) > 0:
+         teamId = 1
+
+      for fleet in fleets:
+         self.loadFleet(fleet, teamId)
+         teamId += 1
+
+      random.shuffle(self.world.shipsToJump)
 
    def complete(self):
-      if len(self.shipsToJump) > 0:
+      if len(self.world.shipsToJump) > 0:
          return False
 
       teams = []
@@ -41,28 +49,19 @@ class Simulation:
       return True
 
    def loadFleet(self, fleet, fleetId):
-      targetPath = "src/playerdata/%s/" % (fleet,)
+      for definition in fleet.ships:
+         for i in range(definition.count):
+            position = self.randomPosition()
+            rotation = self.world.randomValue(0, 1000) * (math.pi / 1000.0)
+            velocity = ( self.world.randomValue(-6.0, 6.0) , self.world.randomValue(-6.0, 6.0) )
 
-      path = sys.path
-      sys.path.append(targetPath)
-      fleetModule = imp.load_source(fleet, targetPath + "Fleet.py")
-      autopilotModule = imp.load_source(fleet, targetPath + "Autopilot.py")
-      sys.path = path
+            autopilot = self.loadAutopilot(definition.autopilot)
 
-      fleet = fleetModule.fleet()
-      autopilot = autopilotModule.Autopilot 
+            ship = Ship.Ship(definition.name, definition.design, autopilot, position, rotation, velocity, self.world, fleetId)
+            self.world.addToHyperspace(ship)
 
-      for name, design in fleet:
-         self.loadShip(name, design, autopilot, fleetId)
-
-   def loadShip(self, name, design, autopilot, fleetId):
-      position = self.randomPosition()
-      rotation = self.world.randomValue(0, 1000) * (math.pi / 1000.0)
-      velocity = ( self.world.randomValue(-6.0, 6.0) , self.world.randomValue(-6.0, 6.0) )
-
-      ship = Ship.Ship(name, design, autopilot, position, rotation, velocity, self.world, fleetId)
-      self.world.prepareObject(ship)
-      self.shipsToJump.append(ship)
+   def loadAutopilot(self, autopilotName):
+      return imp.load_source(autopilotName, "./src/playerdata/autopilot/%s.py" % (autopilotName,)).Autopilot
 
    def randomPosition(self):
       while True:
@@ -75,21 +74,12 @@ class Simulation:
             if distance < minDistance:
                minDistance = distance
          
-         if minDistance > 5000:
+         if minDistance > Misc.WEAPON_RANGE:
             return newPosition
 
    @Timing.timedFunction
    def tick(self):
-      if len(self.shipsToJump) > 0 and self.world.randomValue(0, 10) == 0:
-         self.jumpNextShip()
-
       Cache.clear()
       self.world.simulate()
-
-   def jumpNextShip(self):
-      ship = self.shipsToJump[0]
-      del self.shipsToJump[0]
-
-      self.world.addObject(ship)
 
 

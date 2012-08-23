@@ -1,0 +1,17 @@
+{
+  "name": "James' Battlestar",
+  "ships": [
+    { 
+      "name": "Ong-Mar",
+      "count": 1,
+      "autopilot": "Spinpilot",
+      "design": "<PDDP>\n  <PP>\n  <PDP\n  <PDP\n  <PDP\n PDPPPDD\nSDSCPPPSDS\n PDPPPDD\n  PDDP>\n   PP>\n   PDP>\n  <PDP>\n  <PDP>"
+    },
+    { 
+      "name": "Buddy",
+      "count": 3,
+      "autopilot": "Standard",
+      "design": "<>\nCP\n<>"
+    }
+  ]
+}

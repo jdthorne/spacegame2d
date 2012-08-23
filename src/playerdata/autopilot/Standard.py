@@ -2,7 +2,7 @@
 import math
 
 import HUD
-import Scalar
+from Scalar import *
 import Misc
 import Autolib
 from Vector import *
