@@ -1,4 +1,5 @@
 import random
+import Event
 from Vector import *
 
 class World:
@@ -6,8 +7,12 @@ class World:
       random.seed(seed)
       self.shipsToJump = []
       self.all = []
+      self.destroyed = []
       self.combatants = []
       self.combatTeams = {}
+
+      self.onObjectAdded = Event.Event(self)
+      self.onUpdate = Event.Event(self)
 
    def scan(self):
       return self.combatants
@@ -31,44 +36,48 @@ class World:
 
    def addObject(self, object):
       object.inWorld = True
+      object.onDestroy += self.handleObjectDestroyed
 
       if object.combatTeam != -1:
          self.combatants.append(object)
 
       self.all.append(object)
+      self.onObjectAdded(object)
       
    def simulate(self):
       if len(self.shipsToJump) > 0 and self.randomValue(0, 10) == 0:
          self.jumpNextShip()
 
-      for object in self.all:
-         if object.destroyed:
-            self.all.remove(object)
+      for object in self.destroyed:
+         if object.combatTeam != -1:
+            self.combatants.remove(object)
 
-            if object.combatTeam != -1:
-               self.combatants.remove(object)
-            
-         else:
-            object.simulate()
+         self.all.remove(object)
+
+      self.destroyed = []
+
+      for object in self.all:
+         object.simulate()
+
+      self.onUpdate()
       
    def randomValue(self, a, b):
       return random.randint(a, b)
-      
-   def hasRemainingExcitement(self):
-      for a in self.all[:]:
-         if a.exciting:
-            return True
-      
-      return False
+
+   def handleObjectDestroyed(self, object):
+      self.destroyed.append(object)
 
       
 class WorldItem:
    inWorld = False
    isShip = False
    exciting = False
-   destroyed = False
    combatTeam = -1
    life = 150
+
+   def __init__(self):
+      self.onUpdate = Event.Event(self)
+      self.onDestroy = Event.Event(self)
       
    def simulate(self):
       pass
@@ -76,5 +85,6 @@ class WorldItem:
    def solidFor(self, object):
       return True
       
-   def seflectedBy(self, object):
-      return True
+   def destroy(self):
+      self.onDestroy()
+

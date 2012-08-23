@@ -10,7 +10,6 @@ import Misc
 import Modules
 import ShipControls
 import Physics
-import Cache
 import Timing
 import random
 
@@ -39,6 +38,7 @@ class Ship(Physics.RigidBody):
       self.availableDeflectorPower = 1000.0
       self.velocity = velocity
 
+      self.onDestroy += self.handleDestroyed
       self.damaged = False
       self.hasTakenDamage = False
       
@@ -200,20 +200,11 @@ class Ship(Physics.RigidBody):
             self.explodeModule(module)
             
             if item.combatTeam == -1:
-               item.destroyed = True
+               item.destroy()
                return
 
    @Timing.timedFunction
    def simulateDamage(self):
-      if self.destroyed:
-         self.world.addObject(Misc.Explosion(self.flightComputer.absolutePosition(), 
-                                             self.velocity, 
-                                             125 + (15 * len(self.modules))))
-         for module in self.modules:
-            self.explodeModule(module)
-            
-         return
-   
       connectedModules = []
       def recurseModules(start):
          for m in self.modules:
@@ -233,21 +224,28 @@ class Ship(Physics.RigidBody):
       
       #self.recalculateModules()
 
+   def handleDestroyed(self, sender):
+      self.world.addObject(Misc.Explosion(self.position, 
+                                          self.velocity, 
+                                          125 + (15 * len(self.modules))))
+      for module in self.modules:
+         self.explodeModule(module)
                      
    def explodeModule(self, module):
       self.hasTakenDamage = True
       if not (module in self.modules):
          return
 
+      self.modules.remove(module)
+
       if module is self.flightComputer:
-         self.destroyed = True
+         self.destroy()
 
       if module in self.weapons:
          self.weapons.remove(module)
       if module in self.engines:
          self.engines.remove(module)
 
-      self.modules.remove(module)
       self.world.addObject(Misc.Explosion(module.absolutePosition(), self.velocity, 65))
 
 

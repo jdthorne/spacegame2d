@@ -1,5 +1,12 @@
+class FleetDesigner:
+   def __init__(self, fleetName):
+      pass
+
+   def tick(self, dt):
+      pass
+
+"""
 import Fleet
-import UserInterface
 import Ship
 import World
 import Render
@@ -96,3 +103,4 @@ class FleetDesigner:
          self.simulation = None
          UserInterface.leftSidebar.cancelTestPanelIsolation()
          Render.clean()
+"""

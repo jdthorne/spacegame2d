@@ -1,10 +1,17 @@
 #!/usr/bin/python
 
-import sys
-import time
+import App
 import Timing
-import Simulation
 
+import Simulation
+import FleetDesigner
+
+App.simulation = Simulation.Simulation(["james-battlestar", "james-swarm"])
+App.ui.start()
+
+#App.ui.display(FleetDesigner.FleetDesigner("james-battlestar"))
+
+"""
 ui = ("--ui" in sys.argv)
 if ui:
    import UserInterface
@@ -58,6 +65,6 @@ else:
    print
    print "Simulation complete - averaged %.3ffps, min was %.3ffps" % (frames/totalTime, minFps)
 
-
+"""
 
 Timing.printAll()

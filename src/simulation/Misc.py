@@ -21,7 +21,7 @@ class Explosion(Physics.PointBody):
       self.life -= 2
       
       if self.life < 5:
-         self.destroyed = True
+         self.destroy()
          
    def mass(self):
       return 5
@@ -57,7 +57,7 @@ class Bullet(Physics.PointBody):
          self.deflectorHold = False
          
       if self.life < 0:
-         self.destroyed = True
+         self.destroy()
       
    def solidFor(self, object):
       if object is self.owner:

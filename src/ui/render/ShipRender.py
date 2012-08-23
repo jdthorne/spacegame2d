@@ -6,70 +6,100 @@ import Ship
 import Sprite
 import pyglet
 import Misc
+import App
+import MiscRender
 
-# ======================= STRUCTURAL/CACHING STUFF =========================
+class ShipRenderer:
+   def __init__(self, ship):
+      self.ship = ship
 
-def isWeapon(module):
-   return module.__class__.__name__ == "PlasmaCannon"
-def isComputer(module):
-   return module.__class__.__name__ == "FlightComputer"
-def isEngine(module):
-   return module.__class__.__name__ == "Engine"
-def isDeflector(module):
-   return module.__class__.__name__ == "Deflector"
+      ship.onUpdate += self.handleUpdate
+      ship.onDestroy += self.handleDestroy
 
-def renderStructureToSprite(ship):
-   size = (768, 768)
+      self.sprite = None
+      self.generateSprite()
 
-   image = pyglet.image.Texture.create(size[0], size[1])
-   offset = vectorScale(size, 0.5)
+      self.deflectorSprite = Sprite.create("deflector-field", camera=App.worldCamera, scale=4)
 
-   imagetex = image.get_texture()
-   texfrmbuf =(GLuint*1)()
-   glEnable(GL_BLEND)
-   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-   glGenFramebuffersEXT(1, texfrmbuf)
-   glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, texfrmbuf[0])
-   glFramebufferTexture2DEXT(GL_DRAW_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, imagetex.target, image.id, 0)
+   def handleUpdate(self, ship):
+      self.sprite.setPosition(ship.position)
+      self.sprite.setRotation(ship.rotation)
 
-   for module in ship.modules:
-      if (not isEngine(module)):
+      self.deflectorSprite.setAlpha(ship.availableDeflectorPower / ship.maxDeflectorPower)
+      self.deflectorSprite.setPosition(ship.position)
+
+   def handleDestroy(self, ship):
+      ship.onUpdate -= self.handleUpdate
+      ship.onDestroy -= self.handleDestroy
+
+      self.sprite.destroy()
+      self.deflectorSprite.destroy()
+
+   def generateSprite(self):
+      if self.sprite != None:
+         self.sprite.destroy()
+
+      size = (768, 768)
+
+      isWeapon = lambda module: module.__class__.__name__ == "PlasmaCannon"
+      isComputer = lambda module: module.__class__.__name__ == "FlightComputer"
+      isEngine = lambda module: module.__class__.__name__ == "Engine"
+      isDeflector = lambda module: module.__class__.__name__ == "Deflector"
+
+      image = pyglet.image.Texture.create(size[0], size[1])
+      offset = vectorScale(size, 0.5)
+
+      imagetex = image.get_texture()
+      texfrmbuf =(GLuint*1)()
+      glEnable(GL_BLEND)
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+      glGenFramebuffersEXT(1, texfrmbuf)
+      glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, texfrmbuf[0])
+      glFramebufferTexture2DEXT(GL_DRAW_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, imagetex.target, image.id, 0)
+
+      for module in self.ship.modules:
+         if (not isEngine(module)):
+            x, y = vectorAdd(module.position, offset)
+            x, y = (int(x), int(y))
+
+            Sprite.images["structure-%d" % (self.ship.combatTeam,)].blit(x, y)
+
+      for module in self.ship.modules:
          x, y = vectorAdd(module.position, offset)
          x, y = (int(x), int(y))
 
-         Sprite.images["structure-%d" % (ship.combatTeam,)].blit(x, y)
+         if isEngine(module):
+            engine = module
 
-   for module in ship.modules:
-      x, y = vectorAdd(module.position, offset)
-      x, y = (int(x), int(y))
+            if engine.thrustVector[0] > 0:
+               Sprite.images["engine-structure"].blit(x, y)
+            else:
+               Sprite.images["engine-structure@180"].blit(x, y)
 
-      if isEngine(module):
-         engine = module
+      for module in self.ship.modules:
+         x, y = vectorAdd(module.position, offset)
+         x, y = (int(x), int(y))
 
-         if engine.thrustVector[0] > 0:
-            Sprite.images["engine-structure"].blit(x, y)
-         else:
-            Sprite.images["engine-structure@180"].blit(x, y)
+         if isComputer(module):
+            Sprite.images["computer"].blit(x, y)
+         elif isWeapon(module):
+            Sprite.images["plasma-cannon"].blit(x, y)
+         elif isDeflector(module):
+            Sprite.images["deflector"].blit(x, y)
 
-   for module in ship.modules:
-      x, y = vectorAdd(module.position, offset)
-      x, y = (int(x), int(y))
+      glFlush()
+      glDisable(GL_BLEND)
+      glDeleteFramebuffersEXT(1, texfrmbuf)
+      glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0)
 
-      if isComputer(module):
-         Sprite.images["computer"].blit(x, y)
-      elif isWeapon(module):
-         Sprite.images["plasma-cannon"].blit(x, y)
-      elif isDeflector(module):
-         Sprite.images["deflector"].blit(x, y)
+      image.anchor_x = offset[0]
+      image.anchor_y = offset[1]
 
-   glFlush()
-   glDisable(GL_BLEND)
-   glDeleteFramebuffersEXT(1, texfrmbuf)
-   glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0)
+      self.sprite = Sprite.create(image, camera=App.worldCamera)
 
-   image.anchor_x = offset[0]
-   image.anchor_y = offset[1]
-   return pyglet.sprite.Sprite(image, batch=Sprite.batch, group=Sprite.structureLayer)
+# ======================= STRUCTURAL/CACHING STUFF =========================
+
+"""
 
 # ======================= COMPLICATED EFFECTS ===============================
 def drawEngineFlame(engine):
@@ -133,8 +163,7 @@ def cleanAll():
       clean(ship)
 
 
-"""
-
+EVEN OLDER
 
 
 def drawEngine(engine):

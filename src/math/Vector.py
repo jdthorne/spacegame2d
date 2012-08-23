@@ -76,3 +76,12 @@ def vectorDot(a, b):
 def vectorScalarProjection(a, b):
    return vectorDot(a, b) / vectorMagnitude(b)
    
+
+def vectorElementMin(a, b):
+   return ( min(a[0], b[0]), min(a[1], b[1]) )
+def vectorElementMax(a, b):
+   return ( max(a[0], b[0]), max(a[1], b[1]) )
+
+def vectorInvert(a):
+   return ( 1.0/a[0], 1.0/a[1] )
+

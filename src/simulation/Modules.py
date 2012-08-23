@@ -4,7 +4,6 @@ import ShipControls
 import Misc
 import Ship
 import Timing
-import Cache
 
 class Module:
    isDeflector = False

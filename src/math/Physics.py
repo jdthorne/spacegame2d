@@ -8,6 +8,8 @@ from Vector import *
 
 class PointBody(World.WorldItem):
    def __init__(self, position):
+      World.WorldItem.__init__(self)
+
       self.position = position
       self.velocity = [0, 0]
 
@@ -16,6 +18,8 @@ class PointBody(World.WorldItem):
       
    def simulate(self):
       self.position = vectorAdd(self.position, self.velocity)
+
+      self.onUpdate()
       
    def applyForce(self, force):
       acceleration = self.calculateDeltaVelocityDueToForce(force)

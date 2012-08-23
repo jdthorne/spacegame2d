@@ -2,14 +2,38 @@ from Vector import *
 from Scalar import *
 import math
 import Sprite
+import App
+import Event
 
-def drawBullet(bullet):
-   if bullet.life > 2:
-      Sprite.draw("plasma", bullet.position, scale=3.0, alpha=((1.0*bullet.life)/bullet.initialLife))
+class SimpleRenderer:
+   def __init__(self, object, image):
+      object.onUpdate += self.handleUpdate
+      object.onDestroy += self.handleDestroy
 
-def drawExplosion(explosion):
-   scale = (explosion.life**1.2) / 25.0
-   alpha = float(explosion.life) / explosion.initialLife
-   
-   Sprite.draw("explosion", explosion.position, scale=scale, alpha=alpha)
+      self.sprite = Sprite.create(image, camera=App.worldCamera, additive=True)
 
+   def handleUpdate(self, object):
+      self.sprite.setPosition(object.position)
+      self.updateEffects(object)
+
+   def handleDestroy(self, object):
+      object.onUpdate -= self.handleUpdate
+      object.onDestroy -= self.handleDestroy
+
+      self.sprite.destroy()
+
+class BulletRenderer(SimpleRenderer):
+   def __init__(self, bullet):
+      SimpleRenderer.__init__(self, bullet, "plasma")
+
+   def updateEffects(self, bullet):
+      self.sprite.setScale(4.0)
+      self.sprite.setAlpha((1.0*bullet.life)/bullet.initialLife)
+
+class ExplosionRenderer(SimpleRenderer):
+   def __init__(self, bullet):
+      SimpleRenderer.__init__(self, bullet, "explosion")
+
+   def updateEffects(self, explosion):
+      self.sprite.setScale((explosion.life**1.1) / 25.0)
+      self.sprite.setAlpha(float(explosion.life) / explosion.initialLife)

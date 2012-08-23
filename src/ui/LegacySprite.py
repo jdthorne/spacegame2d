@@ -1,3 +1,4 @@
+"""
 import pyglet
 import os
 import math
@@ -254,3 +255,4 @@ def orientWorld(world, focusedObject=None, padding=Misc.WEAPON_RANGE):
    worldPosition = vectorAdd(actualWorldPosition, vectorScale(viewWindowCenter, 1.0/worldScale))
 
 
+"""
