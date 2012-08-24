@@ -6,7 +6,7 @@ import Timing
 import Simulation
 import FleetDesigner
 
-App.simulation = Simulation.Simulation(["james-battlestar", "james-swarm"])
+App.simulation = Simulation.Simulation("world", ["james-battlestar", "james-swarm"])
 App.ui.start()
 
 #App.ui.display(FleetDesigner.FleetDesigner("james-battlestar"))

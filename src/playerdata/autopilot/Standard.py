@@ -103,13 +103,14 @@ class Autopilot:
          self.currentStatus = (0.5, "approaching")
       
    def fireWeaponsIfPossible(self):
-      direction = abs(vectorDirection(self.target.vector()))
-      range = abs(vectorMagnitude(self.target.vector()))
+      intercept = Autolib.interceptVector(self.target)
+      direction = abs(vectorDirection(intercept))
+      range = abs(vectorMagnitude(intercept))
       
       if direction < 0.1 and range < Misc.WEAPON_RANGE:
          self.weaponsEngaged = True
 
-      if direction > 0.3 or range > Misc.WEAPON_RANGE * 1.5:
+      if direction > 0.3 or range > Misc.WEAPON_RANGE * 2.5:
          self.weaponsEngaged = False
          
       if self.weaponsEngaged:

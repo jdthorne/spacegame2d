@@ -1,3 +1,4 @@
+import weakref
 
 class Event:
    def __init__(self, sender):
@@ -5,17 +6,24 @@ class Event:
       self.callbacks = []
 
    def __add__(self, callback):
-      self.callbacks.append(callback)
+      owner = weakref.ref(callback.im_self)
+      function = callback.im_func
+
+      self.callbacks.append( (owner, function) )
       
       return self
 
    def __sub__(self, callback):
-      self.callbacks.remove(callback)
+      for ownerRef, function in self.callbacks:
+         owner = ownerRef()
+         if (owner is callback.im_self) and (function is callback.im_func):
+            self.callbacks.remove( (ownerRef, function) )
+            return self
       
       return self
 
    def __call__(self, *args):
-      for c in self.callbacks:
-         c(self.sender, *args)
+      for ownerRef, function in self.callbacks:
+         owner = ownerRef()
 
-
+         function(owner, self.sender, *args)

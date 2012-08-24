@@ -9,9 +9,9 @@
     },
     { 
       "name": "Buddy",
-      "count": 3,
+      "count": 5,
       "autopilot": "Standard",
-      "design": "<>\nCP\n<>"
+      "design": "CD"
     }
   ]
 }

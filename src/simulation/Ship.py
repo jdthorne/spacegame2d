@@ -9,6 +9,7 @@ import Misc
 
 import Modules
 import ShipControls
+import Event
 import Physics
 import Timing
 import random
@@ -18,7 +19,7 @@ nextShipId = 0
 SHIP_SIZE = 1200.0
 
 class Ship(Physics.RigidBody):
-   def __init__(self, name, design, autopilot, position, rotation, velocity, world, fleetId):
+   def __init__(self, name, design, autopilot, position, rotation, velocity, world, combatTeam):
       Physics.RigidBody.__init__(self, position)
 
       global nextShipId
@@ -30,7 +31,7 @@ class Ship(Physics.RigidBody):
 
       self.ftlTime = 25
       self.name = name
-      self.combatTeam = fleetId
+      self.combatTeam = combatTeam
       self.exciting = True
       self.world = world
       self.rotation = rotation
@@ -41,6 +42,8 @@ class Ship(Physics.RigidBody):
       self.onDestroy += self.handleDestroyed
       self.damaged = False
       self.hasTakenDamage = False
+
+      self.onLayoutChanged = Event.Event(self)
       
       self.flightComputer = None
       self.modules = []
@@ -166,6 +169,7 @@ class Ship(Physics.RigidBody):
 
       if self.damaged:
          self.simulateDamage()
+         self.onLayoutChanged()
 
    def simulateDeflectors(self, item, distance):
       if self.availableDeflectorPower < 0.02:
@@ -199,9 +203,7 @@ class Ship(Physics.RigidBody):
             self.damaged = True
             self.explodeModule(module)
             
-            if item.combatTeam == -1:
-               item.destroy()
-               return
+            item.collide()
 
    @Timing.timedFunction
    def simulateDamage(self):
@@ -247,6 +249,10 @@ class Ship(Physics.RigidBody):
          self.engines.remove(module)
 
       self.world.addObject(Misc.Explosion(module.absolutePosition(), self.velocity, 65))
+
+   def collide(self):
+      # Ships handle their own collisions
+      return
 
 
 

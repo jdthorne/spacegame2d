@@ -22,21 +22,10 @@ for f in os.listdir("./graphics/"):
       images[name] = image
 
 # ================ THE SPRITE WRAPPER CLASS ==============
-class Sprite:
-   def __init__(self, image, camera, position=(0, 0), rotation=0, scale=1.0, additive=False):
-      if type(image) is str:
-         image = images[image]
-
+class Drawable:
+   def __init__(self, camera, position, rotation, scale):
       self.camera = camera
       self.camera.onChange += self.handleCameraChanged
-
-      blend_src, blend_dest = (pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE_MINUS_SRC_ALPHA)
-      if additive:
-         blend_src, blend_dest = (pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE)
-   
-      self.sprite = pyglet.sprite.Sprite(image, batch=App.ui.batch, 
-                                                blend_src=blend_src, 
-                                                blend_dest=blend_dest)
 
       self.setPosition(position)
       self.setRotation(rotation)
@@ -50,20 +39,20 @@ class Sprite:
       
       position = vectorAdd(position, App.ui.windowCenter)
 
-      self.sprite.set_position(position[0], position[1])
+      self.drawable.x, self.drawable.y = position
 
    def setRotation(self, rotation):
       rotation = -180 * (rotation / math.pi)
-      self.sprite.rotation = rotation
+      self.drawable.rotation = rotation
 
    def setScale(self, scale):
       self.scale = scale 
 
       scale *= self.camera.scale()
-      self.sprite.scale = scale
+      self.drawable.scale = scale
 
    def setAlpha(self, alpha):
-      self.sprite.opacity = scalarBound(0, int(255.0 * alpha), 255)
+      self.drawable.opacity = scalarBound(0, int(255.0 * alpha), 255)
 
    def handleCameraChanged(self, camera):
       self.setPosition(self.position)
@@ -72,9 +61,38 @@ class Sprite:
    def destroy(self):
       self.camera.onChange -= self.handleCameraChanged
 
-      self.sprite.delete()
-      self.sprite = None
+      self.drawable.delete()
+      self.drawable = None   
 
-# ================ THINGS THAT ARE USEFUL ================
-def create(image, camera=App.hudCamera, position=(0, 0), rotation=0, scale=1.0, additive=False):
-   return Sprite(image, camera, position, rotation, scale, additive)
+class Sprite(Drawable):
+   def __init__(self, image, camera=App.hudCamera, position=(99999, 99999), rotation=0, scale=1.0, additive=False):
+      if type(image) is str:
+         image = images[image]
+
+      blend_src, blend_dest = (pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE_MINUS_SRC_ALPHA)
+      if additive:
+         blend_src, blend_dest = (pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE)
+   
+      self.drawable = pyglet.sprite.Sprite(image, batch=App.ui.batch, 
+                                                  blend_src=blend_src, 
+                                                  blend_dest=blend_dest)
+
+      Drawable.__init__(self, camera, position, rotation, scale)
+
+
+
+
+class Text(Drawable):
+   def __init__(self, text, camera=App.hudCamera, position=(99999, 99999), rotation=0, scale=1.0, bold=False, align="left"):
+      self.drawable = pyglet.text.Label(text, batch=App.ui.batchText, 
+                                              bold=bold, 
+                                              anchor_x=align, 
+                                              color=(0, 0, 0, 255), 
+                                              font_size=10,
+                                              font_name="Helvetica")
+
+      Drawable.__init__(self, camera, position, rotation, scale)
+
+   def setText(self, text):
+      if self.drawable.text != text:
+         self.drawable.text = text

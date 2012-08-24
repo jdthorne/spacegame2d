@@ -15,11 +15,14 @@ class ShipRenderer:
 
       ship.onUpdate += self.handleUpdate
       ship.onDestroy += self.handleDestroy
+      ship.onLayoutChanged += self.handleLayoutChanged
 
+      self.wasDestroyed = False
       self.sprite = None
       self.generateSprite()
 
-      self.deflectorSprite = Sprite.create("deflector-field", camera=App.worldCamera, scale=4)
+      self.deflectorSprite = Sprite.Sprite("deflector-field", camera=App.worldCamera, scale=4)
+      self.ftlSprite = Sprite.Sprite("ftl", camera=App.worldCamera, scale=10)
 
    def handleUpdate(self, ship):
       self.sprite.setPosition(ship.position)
@@ -28,12 +31,25 @@ class ShipRenderer:
       self.deflectorSprite.setAlpha(ship.availableDeflectorPower / ship.maxDeflectorPower)
       self.deflectorSprite.setPosition(ship.position)
 
+      if ship.ftlTime > 0:
+         self.ftlSprite.setAlpha(ship.ftlTime / 25.0)
+         self.ftlSprite.setPosition(ship.position)
+      elif self.ftlSprite != None:
+         self.ftlSprite.destroy()
+         self.ftlSprite = None
+
    def handleDestroy(self, ship):
       ship.onUpdate -= self.handleUpdate
       ship.onDestroy -= self.handleDestroy
 
       self.sprite.destroy()
       self.deflectorSprite.destroy()
+
+      self.wasDestroyed = True
+
+   def handleLayoutChanged(self, ship):
+      if not self.wasDestroyed:
+         self.generateSprite()
 
    def generateSprite(self):
       if self.sprite != None:
@@ -62,7 +78,7 @@ class ShipRenderer:
             x, y = vectorAdd(module.position, offset)
             x, y = (int(x), int(y))
 
-            Sprite.images["structure-%d" % (self.ship.combatTeam,)].blit(x, y)
+            Sprite.images["structure-%d" % (self.ship.combatTeam.id,)].blit(x, y)
 
       for module in self.ship.modules:
          x, y = vectorAdd(module.position, offset)
@@ -95,7 +111,7 @@ class ShipRenderer:
       image.anchor_x = offset[0]
       image.anchor_y = offset[1]
 
-      self.sprite = Sprite.create(image, camera=App.worldCamera)
+      self.sprite = Sprite.Sprite(image, camera=App.worldCamera)
 
 # ======================= STRUCTURAL/CACHING STUFF =========================
 

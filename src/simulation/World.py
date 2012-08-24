@@ -5,56 +5,48 @@ from Vector import *
 class World:
    def __init__(self, seed=500):
       random.seed(seed)
-      self.shipsToJump = []
+
+      self.size = 9000
       self.all = []
-      self.destroyed = []
-      self.combatants = []
-      self.combatTeams = {}
+      self.combatTeams = []
+      self.destroyedObjects = []
 
       self.onObjectAdded = Event.Event(self)
+      self.onObjectRemoved = Event.Event(self)
       self.onUpdate = Event.Event(self)
 
+   def setSeed(self, seed):
+      random.seed(seed)
+
    def scan(self):
-      return self.combatants
+      results = []
+      for team in self.combatTeams:
+         results += team.activeShips()
+
+      return results
       
-   def addToHyperspace(self, ship):
-      self.prepareObject(ship)
-      self.shipsToJump.append(ship)
-
-   def jumpNextShip(self):
-      ship = self.shipsToJump[0]
-      del self.shipsToJump[0]
-
-      self.addObject(ship)
-
-   def prepareObject(self, object):
-      if object.combatTeam != -1:
-         if not object.combatTeam in self.combatTeams:
-            self.combatTeams[object.combatTeam] = []
-
-         self.combatTeams[object.combatTeam].append(object)
+   def addCombatTeam(self, team):
+      self.combatTeams.append(team)
 
    def addObject(self, object):
       object.inWorld = True
       object.onDestroy += self.handleObjectDestroyed
 
-      if object.combatTeam != -1:
-         self.combatants.append(object)
-
       self.all.append(object)
       self.onObjectAdded(object)
+
+   def removeObject(self, object):
+      object.inWorld = False
+      object.onDestroy -= self.handleObjectDestroyed
+
+      self.all.remove(object)
+      self.onObjectRemoved(object)
+
+      object.onUpdate()
       
    def simulate(self):
-      if len(self.shipsToJump) > 0 and self.randomValue(0, 10) == 0:
-         self.jumpNextShip()
-
-      for object in self.destroyed:
-         if object.combatTeam != -1:
-            self.combatants.remove(object)
-
-         self.all.remove(object)
-
-      self.destroyed = []
+      while len(self.destroyedObjects) > 0:
+         self.removeObject(self.destroyedObjects.pop())
 
       for object in self.all:
          object.simulate()
@@ -65,14 +57,12 @@ class World:
       return random.randint(a, b)
 
    def handleObjectDestroyed(self, object):
-      self.destroyed.append(object)
-
+      if not object in self.destroyedObjects:
+         self.destroyedObjects.append(object)
       
 class WorldItem:
    inWorld = False
-   isShip = False
    exciting = False
-   combatTeam = -1
    life = 150
 
    def __init__(self):
@@ -84,6 +74,9 @@ class WorldItem:
       
    def solidFor(self, object):
       return True
+
+   def collide(self):
+      self.destroy()
       
    def destroy(self):
       self.onDestroy()

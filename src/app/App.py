@@ -16,4 +16,5 @@ import UI
 import WorldRender
 
 ui = UI.UI()
+ui.setup()
 worldRenderer = WorldRender.WorldRenderer()
