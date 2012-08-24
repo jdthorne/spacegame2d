@@ -96,3 +96,8 @@ class Text(Drawable):
    def setText(self, text):
       if self.drawable.text != text:
          self.drawable.text = text
+
+   def setAlpha(self, alpha):
+      r, g, b, a = self.drawable.color
+      a = scalarBound(0, int(255.0*alpha), 255)
+      self.drawable.color = (r, g, b, a)

@@ -13,7 +13,8 @@ class ShipPanelItem:
 
       self.background = Sprite.Sprite("ship-display")
 
-      self.nameText = Sprite.Text("")
+      self.nameText = Sprite.Text("", bold=True)
+      self.statusText = Sprite.Text("")
       self.deflector = Sprite.Sprite("ship-deflector")
       self.ok = Sprite.Sprite("ship-ok")
       self.damage = Sprite.Sprite("ship-damage")
@@ -23,6 +24,7 @@ class ShipPanelItem:
 
       self.background.setPosition(position)
       self.nameText.setPosition(vectorAdd(position, (-110, 0)))
+      self.statusText.setPosition(vectorAdd(position, (-40, 0)))
 
       self.updateDeflectorPosition()
 
@@ -31,9 +33,14 @@ class ShipPanelItem:
 
       if not ship.inWorld:
          self.nameText.setText("")
+         self.statusText.setText("")
          return
 
       self.nameText.setText(ship.name)
+
+      importance, status = ship.status
+      self.statusText.setAlpha(importance)
+      self.statusText.setText(status.lower())
 
    def updateDeflectorPosition(self):
       ship = self.ship 
