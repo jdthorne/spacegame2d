@@ -2,6 +2,20 @@ from Vector import *
 import App
 import Sprite
 
+class Item:
+   def __init__(self):
+      self.background = Sprite.Sprite("ship-display")
+
+      self.nameText = Sprite.Text("", bold=True)
+      self.statusText = Sprite.Text("")
+
+   def setPosition(self, position):
+      self.position = position
+
+      self.background.setPosition(position)
+      self.nameText.setPosition(vectorAdd(position, (-110, 0)))
+      self.statusText.setPosition(vectorAdd(position, (-40, 0)))
+
 class Panel:
    def __init__(self, text, headerId):
       self.titleSprite = Sprite.Sprite("team-display-" + str(headerId))
@@ -10,6 +24,15 @@ class Panel:
    def setPosition(self, position):
       self.titleSprite.setPosition(position)
       self.titleText.setPosition(vectorAdd(position, (0, -5)))
+
+      position = vectorAdd(position, (0, -28))
+      for item in self.items:
+         item.setPosition(position)
+         position = vectorAdd(position, (0, -22))
+
+   def height(self):
+      return 35 + (22 * len(self.items))
+
 
 class Sidebar:
    def __init__(self, x):
@@ -29,3 +52,4 @@ class Sidebar:
       self.panels.append(panel)
 
       self.layoutPanels()
+

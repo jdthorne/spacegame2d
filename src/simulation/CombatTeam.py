@@ -3,6 +3,7 @@ import imp
 import Misc
 import math
 import Ship
+import random
 from Vector import *
 
 nextTeamId = 0
@@ -42,6 +43,8 @@ class CombatTeam:
 
             self.shipsInFtl.append(ship)
             self.ships.append(ship)
+
+      random.shuffle(self.shipsInFtl)
 
    def loadAutopilot(self, autopilotName):
       return imp.load_source(autopilotName, "./src/playerdata/autopilot/%s.py" % (autopilotName,)).Autopilot
