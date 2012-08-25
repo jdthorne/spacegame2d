@@ -21,6 +21,20 @@ for f in os.listdir("./graphics/"):
       
       images[name] = image
 
+layerIndex = 0
+def nextLayer():
+   global layerIndex 
+   layerIndex += 1
+   return pyglet.graphics.OrderedGroup(layerIndex)
+
+shipLayer = nextLayer()
+gridLayer = nextLayer()
+effectLayer = nextLayer()
+toolLayer = nextLayer()
+
+sidebarBaseLayer = nextLayer()
+sidebarPanelLayer = nextLayer()
+
 # ================ THE SPRITE WRAPPER CLASS ==============
 class Drawable:
    def __init__(self, camera, position, rotation, scale):
@@ -34,12 +48,12 @@ class Drawable:
    def setPosition(self, position):
       self.position = position
 
-      position = vectorAdd(position, self.camera.position())
-      position = vectorScale(position, self.camera.scale())
-      
-      position = vectorAdd(position, App.ui.windowCenter)
+      position = self.camera.toScreenCoordinates(position)
 
       self.drawable.x, self.drawable.y = position
+
+   def hide(self):
+      self.setPosition((-999999, -9999999))
 
    def setRotation(self, rotation):
       rotation = -180 * (rotation / math.pi)
@@ -65,7 +79,7 @@ class Drawable:
       self.drawable = None   
 
 class Sprite(Drawable):
-   def __init__(self, image, camera=App.hudCamera, position=(99999, 99999), rotation=0, scale=1.0, additive=False):
+   def __init__(self, image, camera=App.hudCamera, position=(99999, 99999), rotation=0, scale=1.0, additive=False, layer=shipLayer):
       if type(image) is str:
          image = images[image]
 
@@ -75,18 +89,23 @@ class Sprite(Drawable):
    
       self.drawable = pyglet.sprite.Sprite(image, batch=App.ui.batch, 
                                                   blend_src=blend_src, 
-                                                  blend_dest=blend_dest)
+                                                  blend_dest=blend_dest, 
+                                                  group=layer)
 
       Drawable.__init__(self, camera, position, rotation, scale)
 
+   def setImage(self, image):
+      if type(image) is str:
+         image = images[image]
 
-
+      self.drawable.image = image
 
 class Text(Drawable):
    def __init__(self, text, camera=App.hudCamera, position=(99999, 99999), rotation=0, scale=1.0, bold=False, align="left"):
       self.drawable = pyglet.text.Label(text, batch=App.ui.batchText, 
                                               bold=bold, 
                                               anchor_x=align, 
+                                              anchor_y="center",
                                               color=(0, 0, 0, 255), 
                                               font_size=10,
                                               font_name="Helvetica")
@@ -96,6 +115,16 @@ class Text(Drawable):
    def setText(self, text):
       if self.drawable.text != text:
          self.drawable.text = text
+
+   def setColor(self, color):
+      r, g, b, a = self.drawable.color
+      newR, newG, newB = color
+
+      r = scalarBound(0, int(newR*255.0), 255)
+      g = scalarBound(0, int(newG*255.0), 255)
+      b = scalarBound(0, int(newB*255.0), 255)
+      self.drawable.color = (r, g, b, a)
+
 
    def setAlpha(self, alpha):
       r, g, b, a = self.drawable.color

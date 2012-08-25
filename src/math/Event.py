@@ -25,5 +25,6 @@ class Event:
    def __call__(self, *args):
       for ownerRef, function in self.callbacks:
          owner = ownerRef()
-
-         function(owner, self.sender, *args)
+         
+         if owner != None:
+            function(owner, self.sender, *args)

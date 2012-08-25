@@ -10,6 +10,7 @@ class PointBody(World.WorldItem):
    def __init__(self, position):
       World.WorldItem.__init__(self)
 
+      self.physicsEnabled = True
       self.position = position
       self.velocity = [0, 0]
 
@@ -17,7 +18,8 @@ class PointBody(World.WorldItem):
       return self is rhs
       
    def simulate(self):
-      self.position = vectorAdd(self.position, self.velocity)
+      if self.physicsEnabled:
+         self.position = vectorAdd(self.position, self.velocity)
 
       self.onUpdate()
       
@@ -44,6 +46,10 @@ class RigidBody(PointBody):
 
    def simulate(self):
       PointBody.simulate(self)
+
+      if not self.physicsEnabled:
+         return
+
       self.rotation = (self.rotation + self.spin) % (2 * math.pi)
 
    def applyLocalForce(self, force, atPoint=[0, 0]):

@@ -10,7 +10,7 @@ class SimpleRenderer:
       object.onUpdate += self.handleUpdate
       object.onDestroy += self.handleDestroy
 
-      self.sprite = Sprite.Sprite(image, camera=App.worldCamera, additive=True)
+      self.sprite = Sprite.Sprite(image, layer=Sprite.effectLayer, camera=App.worldCamera, additive=True)
 
    def handleUpdate(self, object):
       self.sprite.setPosition(object.position)

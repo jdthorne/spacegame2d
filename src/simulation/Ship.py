@@ -7,6 +7,7 @@ from Scalar import *
 import World
 import Misc
 
+import App
 import Modules
 import ShipControls
 import Event
@@ -19,7 +20,7 @@ nextShipId = 0
 SHIP_SIZE = 1200.0
 
 class Ship(Physics.RigidBody):
-   def __init__(self, name, design, autopilot, position, rotation, velocity, world, combatTeam):
+   def __init__(self, name, design, autopilot, position, rotation, velocity, combatTeam):
       Physics.RigidBody.__init__(self, position)
 
       global nextShipId
@@ -33,7 +34,7 @@ class Ship(Physics.RigidBody):
       self.name = name
       self.combatTeam = combatTeam
       self.exciting = True
-      self.world = world
+      self.world = App.world
       self.rotation = rotation
       self.isShip = True
       self.availableDeflectorPower = 1000.0
@@ -47,42 +48,91 @@ class Ship(Physics.RigidBody):
       
       self.flightComputer = None
       self.modules = []
+
+      self.moduleOffset = (0, 0)
       
       for moduleType, x, y in allModules(design):
-         x *= Misc.MODULE_SIZE
-         y *= Misc.MODULE_SIZE
-         module = None
+         #x *= Misc.MODULE_SIZE
+         #y *= Misc.MODULE_SIZE
          
-         if moduleType == "C":
-            module = Modules.FlightComputer(self, [x, y], autopilot)
-            self.flightComputer = module
-         elif moduleType == "S":
-            module = Modules.Structure(self, [x, y])
-         elif moduleType == "<":
-            module = Modules.Engine(self, [x, y], [6, 0])
-         elif moduleType == ">":
-            module = Modules.Engine(self, [x, y], [-6, 0])
-         elif moduleType == "]":
-            module = Modules.Engine(self, [x, y], [-2, 0])
-         elif moduleType == "[":
-            module = Modules.Engine(self, [x, y], [2, 0])
-         elif moduleType == "P":
-            module = Modules.PlasmaCannon(self, [x, y])
-         elif moduleType == "D":
-            module = Modules.Deflector(self, [x, y])
-         
-         self.modules.append(module)
+         self.installModule(moduleType, (x, y))
          
       self.engines = [m for m in self.modules if isinstance(m, Modules.Engine)]
       self.weapons = [r for r in self.modules if isinstance(r, Modules.PlasmaCannon)]
 
+      self.installAutopilot(autopilot)
+
       random.shuffle(self.engines)
       random.shuffle(self.weapons)
       
+      self.moduleOffset = (0, 0)
       self.recalculateModules()
 
    def installAutopilot(self, autopilot):
       self.flightComputer.installAutopilot(autopilot)
+
+   def installModule(self, moduleType, modulePosition):
+      position = vectorScale(modulePosition, Misc.MODULE_SIZE)
+      position = vectorOffset(position, self.moduleOffset)
+
+      for module in self.modules:
+         if vectorDistance(module.position, position) < Misc.MODULE_SIZE / 2:
+            if module is self.flightComputer:
+               return
+               
+            elif module.installType == moduleType:
+               return
+
+            self.explodeModule(module)
+
+      x, y = position
+      module = None
+
+      if moduleType == "C":
+         module = Modules.FlightComputer(self, [x, y], None)
+         self.flightComputer = module
+      elif moduleType == "S":
+         module = Modules.Structure(self, [x, y])
+      elif moduleType == "<":
+         module = Modules.Engine(self, [x, y], [6, 0])
+      elif moduleType == ">":
+         module = Modules.Engine(self, [x, y], [-6, 0])
+      elif moduleType == "]":
+         module = Modules.Engine(self, [x, y], [-2, 0])
+      elif moduleType == "[":
+         module = Modules.Engine(self, [x, y], [2, 0])
+      elif moduleType == "P":
+         module = Modules.PlasmaCannon(self, [x, y])
+      elif moduleType == "D":
+         module = Modules.Deflector(self, [x, y])
+      
+      if module != None:
+         module.installType = moduleType
+         module.installPosition = modulePosition
+         self.modules.append(module)
+
+      self.onLayoutChanged()
+
+   def design(self):
+      min, max = vectorBounds( [m.installPosition for m in self.modules] )
+      
+      str = ""
+      for y in range(int(min[1]), int(max[1]+1)):
+         for x in range(int(min[0]), int(max[0]+1)):
+
+            installType = " "
+            for module in self.modules:
+               if module.installPosition == (x, y):
+                  installType = module.installType
+                  found = True
+                  break
+
+            str += installType
+
+         str += "\n"
+
+      return str
+
 
    def __hash__(self):
       return self.id
@@ -112,6 +162,7 @@ class Ship(Physics.RigidBody):
          m.position = vectorOffset(m.position, move)
          
       self.position = vectorAdd(self.position, move)
+      self.moduleOffset = vectorAdd(self.moduleOffset, move)
       
       # Recalculate moment of inertia
       def massRadiusSquared(module):

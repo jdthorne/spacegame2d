@@ -1,106 +1,159 @@
-class FleetDesigner:
-   def __init__(self, fleetName):
-      pass
-
-   def tick(self, dt):
-      pass
-
-"""
+import App
 import Fleet
+import FleetPanel
+import ShipDesignerPanels
 import Ship
-import World
-import Render
 import math
 import Sprite
-import Simulation
+from Vector import *
 import Misc
 
-class NullAutopilot:
-   def __init__(self, ship):
-      pass
-   def run(self):
-      pass
-   def status(self):
-      pass 
-
 class FleetDesigner:
-   def __init__(self, fleetName):
-      UserInterface.rightSidebar.show()
 
-      self.world = World.World()
+   # ================ CONSTRUCTION ======================
+   def __init__(self, fleetName):
       self.fleet = Fleet.load(fleetName)
 
-      self.ships = []
-      x = 0
-      for definition in self.fleet.ships:
-         ship = Ship.Ship(definition.name, definition.design, NullAutopilot,
-                          (x, 0), math.pi/2, (0, 0), self.world, 0)
+      self.setupFleetPanel()
+      self.setupConstructionPanels()
+      self.setupGrid()
+      self.setupWorld()
 
-         ship.definition = definition
-         ship.status = definition.autopilot
-         ship.availableDeflectorPower = 0.0
-         ship.ftlTime = 0
+   def setupFleetPanel(self):
+      self.fleetPanel = FleetPanel.FleetPanel(self.fleet)
+      App.ui.right.addPanel(self.fleetPanel)
+      App.ui.right.onSelectionChanged += self.handleShipSelected
 
-         self.world.prepareObject(ship)
-         self.world.addObject(ship)
+   def setupConstructionPanels(self):
+      App.ui.left.onSelectionChanged += self.handleToolSelected
 
-         self.ships.append(ship)
+      self.floatyModule = None
+      self.structuralPanel = ShipDesignerPanels.StructuralPanel()
+      App.ui.left.addPanel(self.structuralPanel)
 
-         x += 2000
+      self.autopilotPanel = ShipDesignerPanels.AutopilotPanel()
+      App.ui.left.addPanel(self.autopilotPanel)
 
-      UserInterface.leftSidebar.onTestLaunched = self.handleTestLaunched
-      UserInterface.leftSidebar.layout()
+      self.testingPanel = ShipDesignerPanels.TestingPanel()
+      App.ui.left.addPanel(self.testingPanel)
 
-      UserInterface.rightSidebar.onShipSelected = self.handleShipSelected
-      UserInterface.rightSidebar.displayFleet(self.fleet, self.ships, "0")
-      UserInterface.rightSidebar.layout()
+   def setupGrid(self):
+      self.grid = {}
+      for x in [-2, -1, 0, 1, 2]:
+         for y in [-2, -1, 0, 1, 2]:
+            self.grid[ (x*400, y*400) ] = Sprite.Sprite("grid", camera=App.worldCamera, layer=Sprite.gridLayer)
 
-      self.currentShip = None
-      self.simulation = None
+   def setupWorld(self):
+      App.world.onUpdate += self.setupWorldActual
 
-   def draw(self):
-      if self.simulation == None:
-         Sprite.orientWorld(self.world, self.currentShip, padding=500)
-         Render.render(self.world)
+   def setupWorldActual(self, world):
+      App.world.onUpdate -= self.setupWorldActual
+      App.world.removeAllObjects()
 
-      else:
-         Sprite.orientWorld(self.world, self.currentShip)
-         Render.render(self.simulation.world)
+      position = (0, 0)
+      self.shipsByDefinition = {}
+      for design in self.fleet.ships:
+         ship = Ship.Ship(design.name, design=design.design, 
+                                       autopilot=None, 
+                                       position=position, 
+                                       rotation=math.pi/2,
+                                       velocity=(0, 0), 
+                                       combatTeam=None)
+         ship.physicsEnabled = False
+         App.world.addObject(ship)
+         self.shipsByDefinition[design] = ship
 
-   def tick(self, dt):
-      if self.simulation != None:
-         self.simulation.tick()
+         position = vectorAdd(position, (Misc.WEAPON_RANGE, 0))
 
-   def handleMouseMotion(self, x, y, dx, dy):
-      pass
+   # ================ GRID CONFIGURATION & DATA ==================
+   def moveGrid(self, position):
+      for delta in self.grid:
+         self.grid[delta].setPosition( vectorAdd(position, delta) )
 
-   def complete(self):
-      return False
+   def hideGrid(self):
+      for delta in self.grid:
+         self.grid[delta].hide()
 
-   def handleShipSelected(self, ship):
-      if self.simulation != None:
+   def positionToGridCoordinates(self, position):
+      positionOffset = vectorSub(position, self.grid[ (0, 0) ].position)
+      positionOffsetInGridCoordinates = vectorScale(positionOffset, 1.0/Misc.MODULE_SIZE)
+
+      positionOffsetInGridCoordinates = vectorRound(positionOffsetInGridCoordinates)
+
+      return positionOffsetInGridCoordinates      
+
+   def snapToGrid(self, position):
+      positionOffsetInGridCoordinates = self.positionToGridCoordinates(position)
+
+      positionOffset = vectorScale(positionOffsetInGridCoordinates, Misc.MODULE_SIZE)
+      position = vectorAdd(positionOffset, self.grid[ (0, 0) ].position)
+
+      return position
+
+   # ==================== SHIP SELECTION =========================
+   def handleShipSelected(self, sidebar, item):
+      if item == None:
+         App.ui.left.deselectAll()
+         App.ui.left.hide()
+         App.worldCamera.focus = None
+         self.handleToolSelected()
          return
 
+      ship = self.shipsByDefinition[item.shipDef]
+
+      self.currentShipDef = item.shipDef
       self.currentShip = ship
+      App.ui.left.show()
+      App.worldCamera.focus = ship
 
-      if ship != None:
-         UserInterface.leftSidebar.show()
-      else:
-         UserInterface.leftSidebar.hide()
+      self.handleToolSelected()
 
-   def handleTestLaunched(self):
-      if self.simulation == None:
-         self.currentShip.availableDeflectorPower = self.currentShip.maxDeflectorPower
+   # ==================== TOOL SELECTION =========================
+   def handleToolSelected(self, sidebar=None, tool=None):
+      self.updateSelectedStructuralTool()
 
-         self.simulation = Simulation.Simulation(seed="waffle", 
-                                                 fleets=[Fleet.load("james-swarm")],
-                                                 existingShips=[self.currentShip])
+   # ==================== STRUCTURAL TOOL =========================
+   def updateSelectedStructuralTool(self):
+      module = self.structuralPanel.selectedToolSprite()
 
-         self.currentShip.installAutopilot(self.simulation.loadAutopilot(self.currentShip.definition.autopilot))
-         UserInterface.leftSidebar.isolateTestPanel()
+      if (module == None) or (self.currentShip == None):
+         self.hideGrid()
 
-      else:
-         self.simulation = None
-         UserInterface.leftSidebar.cancelTestPanelIsolation()
-         Render.clean()
-"""
+         if self.floatyModule != None:
+            self.floatyModule.destroy()
+            self.floatyModule = None
+
+         return
+
+      self.moveGrid(self.currentShip.flightComputer.absolutePosition())
+      self.floatyModule = Sprite.Sprite(module, camera=App.worldCamera, rotation=math.pi/2, layer=Sprite.toolLayer)
+
+   def handleMouseMoved(self, x, y, dx, dy):
+      if self.floatyModule == None:
+         return
+
+      if abs(x) >= (App.ui.windowCenter[0] - 240):
+         self.floatyModule.hide()
+         return
+
+      worldPosition = App.worldCamera.toWorldCoordinates( (x, y) )
+
+      position = self.snapToGrid( App.worldCamera.toWorldCoordinates( (x, y) ))
+      self.floatyModule.setPosition(position)
+
+   def handleMouseDown(self, x, y, button, modifiers):
+      if abs(x) >= (App.ui.windowCenter[0] - 240):
+         return
+
+      if self.floatyModule != None:
+         module = self.structuralPanel.selectedToolIdentifier()
+         position = App.worldCamera.toWorldCoordinates( (x, y) )
+         position = self.positionToGridCoordinates( position )
+         position = vectorRound(vectorRotate(position, -math.pi/2))
+
+         self.currentShip.installModule(module, position)
+         self.currentShipDef.design = self.currentShip.design()
+         self.fleet.save()
+
+   # ================= TESTING SCENARIO =====================
+   

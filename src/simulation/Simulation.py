@@ -22,9 +22,3 @@ class Simulation:
          team = CombatTeam.CombatTeam(fleet)
 
          App.world.addCombatTeam(team)
-
-         panel = CombatTeamPanel.CombatTeamPanel(team)
-         App.ui.right.addPanel(panel)
-
-   def complete(self):
-      return False

@@ -57,7 +57,6 @@ class ShipPanelItem(Sidebar.Item):
          self.ok.setPosition(vectorAdd(self.position, (120 + 6, 0)))
          self.damage.setPosition(vectorAdd(self.position, (120 - 6, 0)))
 
-
 class CombatTeamPanel(Sidebar.Panel):
    def __init__(self, team):
       Sidebar.Panel.__init__(self, team.name, team.id)
@@ -66,8 +65,6 @@ class CombatTeamPanel(Sidebar.Panel):
       self.loadShips()
 
    def loadShips(self):
-      self.items = []
-
       for ship in self.team.ships:
          item = ShipPanelItem(ship)
          self.items.append(item)

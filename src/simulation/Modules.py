@@ -36,9 +36,12 @@ class FlightComputer(Module):
 
    def installAutopilot(self, autopilot):
       self.autopilot = None     
-      self.createAutopilot = autopilot      
+      self.createAutopilot = autopilot
 
    def simulate(self):
+      if self.createAutopilot == None:
+         return
+
       if self.autopilot == None:
          self.shipWrapper = ShipControls.ShipWrapper(self.parent)
          self.autopilot = self.createAutopilot(self.shipWrapper)

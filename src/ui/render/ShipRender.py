@@ -28,8 +28,9 @@ class ShipRenderer:
       self.sprite.setPosition(ship.position)
       self.sprite.setRotation(ship.rotation)
 
-      self.deflectorSprite.setAlpha(ship.availableDeflectorPower / ship.maxDeflectorPower)
-      self.deflectorSprite.setPosition(ship.position)
+      if ship.combatTeam != None:
+         self.deflectorSprite.setAlpha(ship.availableDeflectorPower / ship.maxDeflectorPower)
+         self.deflectorSprite.setPosition(ship.position)
 
       if ship.ftlTime > 0:
          self.ftlSprite.setAlpha(ship.ftlTime / 25.0)
@@ -73,12 +74,17 @@ class ShipRenderer:
       glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, texfrmbuf[0])
       glFramebufferTexture2DEXT(GL_DRAW_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, imagetex.target, image.id, 0)
 
+
+      structureImage = "structure-0"
+      if self.ship.combatTeam != None:
+         structureImage = "structure-%d" % (self.ship.combatTeam.id,)
+
       for module in self.ship.modules:
          if (not isEngine(module)):
             x, y = vectorAdd(module.position, offset)
             x, y = (int(x), int(y))
 
-            Sprite.images["structure-%d" % (self.ship.combatTeam.id,)].blit(x, y)
+            Sprite.images[structureImage].blit(x, y)
 
       for module in self.ship.modules:
          x, y = vectorAdd(module.position, offset)

@@ -15,6 +15,8 @@ class World:
       self.onObjectRemoved = Event.Event(self)
       self.onUpdate = Event.Event(self)
 
+      self.onCombatTeamAdded = Event.Event(self)
+
    def setSeed(self, seed):
       random.seed(seed)
 
@@ -27,6 +29,7 @@ class World:
       
    def addCombatTeam(self, team):
       self.combatTeams.append(team)
+      self.onCombatTeamAdded(team)
 
    def addObject(self, object):
       object.inWorld = True
@@ -43,6 +46,11 @@ class World:
       self.onObjectRemoved(object)
 
       object.onUpdate()
+
+   def removeAllObjects(self):
+      for object in self.all[:]:
+         object.onDestroy()
+         self.removeObject(object)
       
    def simulate(self):
       while len(self.destroyedObjects) > 0:
