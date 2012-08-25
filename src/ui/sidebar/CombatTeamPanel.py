@@ -2,6 +2,7 @@
 from Vector import *
 from Scalar import *
 
+import App
 import Sidebar
 import Sprite
 
@@ -13,9 +14,19 @@ class ShipPanelItem(Sidebar.Item):
       ship.onDestroy += self.handleUpdate
       self.ship = ship
 
-      self.deflector = Sprite.Sprite("ship-deflector")
-      self.ok = Sprite.Sprite("ship-ok")
-      self.damage = Sprite.Sprite("ship-damage")
+      self.deflector = Sprite.Sprite("ship-deflector", layer=Sprite.sidebarGraphicsLayer)
+      self.ok = Sprite.Sprite("ship-ok", layer=Sprite.sidebarGraphicsUpperLayer)
+      self.damage = Sprite.Sprite("ship-damage", layer=Sprite.sidebarGraphicsUpperLayer)
+
+   def destroy(self):
+      self.ship.onUpdate -= self.handleUpdate
+      self.ship.onDestroy -= self.handleUpdate
+
+      self.deflector.destroy()
+      self.ok.destroy()
+      self.damage.destroy()
+
+      Sidebar.Item.destroy(self)
 
    def setPosition(self, position):
       Sidebar.Item.setPosition(self, position)
@@ -24,8 +35,13 @@ class ShipPanelItem(Sidebar.Item):
 
    def handleUpdate(self, ship):
       if not ship.inWorld:
+         if not ship.wasDestroyed:
+            self.statusText.setAlpha(0.2)
+            self.statusText.setText("in ftl...")
+         else:
+            self.statusText.setText("")
+
          self.nameText.setText("")
-         self.statusText.setText("")
 
          self.deflector.setPosition(vectorAdd(self.position, (500, 0)))
          self.ok.setPosition(vectorAdd(self.position, (500, 0)))
@@ -50,7 +66,7 @@ class ShipPanelItem(Sidebar.Item):
       self.deflector.setPosition(vectorAdd(self.position, (120 - 12 + 25 - deflectorPosition, 0)))
 
       # Structural Integrity
-      if not ship.damaged:
+      if not ship.hasTakenDamage:
          self.ok.setPosition(vectorAdd(self.position, (120 - 6, 0)))
          self.damage.setPosition(vectorAdd(self.position, (120 + 6, 0)))
       else:
@@ -61,6 +77,8 @@ class CombatTeamPanel(Sidebar.Panel):
    def __init__(self, team):
       Sidebar.Panel.__init__(self, team.name, team.id)
 
+      App.world.onCombatTeamRemoved += self.handleTeamRemoved
+
       self.team = team
       self.loadShips()
 
@@ -69,3 +87,8 @@ class CombatTeamPanel(Sidebar.Panel):
          item = ShipPanelItem(ship)
          self.items.append(item)
 
+   def handleTeamRemoved(self, world, team):
+      if not (team is self.team):
+         return
+
+      self.destroy()

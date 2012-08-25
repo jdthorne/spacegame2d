@@ -8,14 +8,13 @@ from Vector import *
 
 nextTeamId = 0
 
-class CombatTeam:
-   def __init__(self, fleet):
+class BasicCombatTeam:
+   def __init__(self, name):
       self.shipsInFtl = []
       self.shipsInWorld = []
       self.ships = []
 
-      self.name = fleet.name
-      self.loadFleet(fleet)
+      self.name = name
 
       global nextTeamId
       self.id = nextTeamId
@@ -26,36 +25,18 @@ class CombatTeam:
    def __eq__(self, rhs):
       return self is rhs
 
-   # Current Status
+   def destroy(self):
+      App.world.onUpdate -= self.handleWorldUpdate
+
    def activeShips(self):
       return self.shipsInWorld
 
-   # Setup
-   def loadFleet(self, fleet):
-      for definition in fleet.ships:
-         for i in range(definition.count):
-            autopilot = self.loadAutopilot(definition.autopilot)
+   def addShip(self, ship):
+      ship.onDestroy += self.handleShipDestroyed
+      self.ships.append(ship)
 
-            ship = Ship.Ship(definition.name, definition.design, autopilot, 
-                             (0, 0), 0, (0, 0), App.world, self)
-
-            ship.onDestroy += self.handleShipDestroyed
-
-            self.shipsInFtl.append(ship)
-            self.ships.append(ship)
-
-      random.shuffle(self.shipsInFtl)
-
-   def loadAutopilot(self, autopilotName):
-      return imp.load_source(autopilotName, "./src/playerdata/autopilot/%s.py" % (autopilotName,)).Autopilot
-
-   # Destroyed
-   def handleShipDestroyed(self, ship):
-      self.shipsInWorld.remove(ship)
-
-   # FTL
    def handleWorldUpdate(self, world):
-      if len(self.shipsInFtl) > 0 and world.randomValue(0, 10) == 0:
+      if len(self.shipsInFtl) > 0 and world.randomValue(0, 20) == 0:
          self.jumpNextShip()
 
    def jumpNextShip(self):
@@ -68,6 +49,32 @@ class CombatTeam:
       self.shipsInWorld.append(ship)
       App.world.addObject(ship)
 
+   # Destroyed
+   def handleShipDestroyed(self, ship):
+      self.shipsInWorld.remove(ship)
+
+
+class CombatTeam(BasicCombatTeam):
+   def __init__(self, fleet):
+      BasicCombatTeam.__init__(self, fleet.name)
+
+      self.loadFleet(fleet)
+
+      App.world.onUpdate += self.handleWorldUpdate
+
+   # Setup
+   def loadFleet(self, fleet):
+      for definition in fleet.ships:
+         for i in range(definition.count):
+            ship = Ship.Ship(definition, 
+                             (0, 0), 0, (0, 0), self)
+
+            self.addShip(ship)
+            self.shipsInFtl.append(ship)
+
+      random.shuffle(self.shipsInFtl)
+
+   # FTL
    def randomPosition(self):
       for i in range(1, 5):
          newPosition = (App.world.randomValue(-App.world.size, App.world.size), App.world.randomValue(-App.world.size, App.world.size))

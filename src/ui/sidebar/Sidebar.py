@@ -44,11 +44,19 @@ class Item:
 
       self.setSelected(True)
 
+   def destroy(self):
+      self.background.destroy()
+
+      self.nameText.destroy()
+      self.statusText.destroy()
+      self.rightText.destroy()
+
 class Panel:
    def __init__(self, text, headerId):
       self.titleSprite = Sprite.Sprite("team-display-" + str(headerId), layer=Sprite.sidebarPanelLayer)
       self.titleText = Sprite.Text(text, bold=True, align="center")
 
+      self.onDestroy = Event.Event(self)
       self.items = []
 
    def setPosition(self, position):
@@ -74,6 +82,13 @@ class Panel:
       for item in self.items:
          item.handleMouseDown(x, y, button, modifier)
 
+   def destroy(self):
+      for item in self.items:
+         item.destroy()
+
+      self.titleSprite.destroy()
+      self.titleText.destroy()
+      self.onDestroy()
 
 class Sidebar:
    def __init__(self, xHidden, xVisible):
@@ -105,8 +120,13 @@ class Sidebar:
          y -= (panel.height() + 50)
 
    def addPanel(self, panel):
+      panel.onDestroy += self.handlePanelDestroyed
       self.panels.append(panel)
 
+      self.layoutPanels()
+
+   def handlePanelDestroyed(self, panel):
+      self.panels.remove(panel)
       self.layoutPanels()
 
    def deselectAll(self):

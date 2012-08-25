@@ -34,6 +34,8 @@ toolLayer = nextLayer()
 
 sidebarBaseLayer = nextLayer()
 sidebarPanelLayer = nextLayer()
+sidebarGraphicsLayer = nextLayer()
+sidebarGraphicsUpperLayer = nextLayer()
 
 # ================ THE SPRITE WRAPPER CLASS ==============
 class Drawable:

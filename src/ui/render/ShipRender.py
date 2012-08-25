@@ -19,10 +19,11 @@ class ShipRenderer:
 
       self.wasDestroyed = False
       self.sprite = None
-      self.generateSprite()
 
       self.deflectorSprite = Sprite.Sprite("deflector-field", camera=App.worldCamera, scale=4)
       self.ftlSprite = Sprite.Sprite("ftl", camera=App.worldCamera, scale=10)
+
+      self.generateSprite()
 
    def handleUpdate(self, ship):
       self.sprite.setPosition(ship.position)
@@ -45,6 +46,10 @@ class ShipRenderer:
 
       self.sprite.destroy()
       self.deflectorSprite.destroy()
+
+      if self.ftlSprite != None:
+         self.ftlSprite.destroy()
+         self.ftlSprite = None
 
       self.wasDestroyed = True
 
@@ -118,6 +123,7 @@ class ShipRenderer:
       image.anchor_y = offset[1]
 
       self.sprite = Sprite.Sprite(image, camera=App.worldCamera)
+      self.handleUpdate(self.ship)
 
 # ======================= STRUCTURAL/CACHING STUFF =========================
 

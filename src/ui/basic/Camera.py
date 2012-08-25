@@ -39,12 +39,13 @@ class WorldCamera(Camera):
       Camera.__init__(self, 0.05)
 
       self.focus = None
+      self.focusScale = 1.0
       App.world.onUpdate += self.handleWorldUpdate
 
    def handleWorldUpdate(self, world):
       if self.focus != None:
          self.position.set(vectorScale(self.focus.position, -1))
-         self.scale.set(1.0)
+         self.scale.set(self.focusScale)
 
       else:
          minPosition, maxPosition = vectorBounds([o.position for o in world.all if o.exciting])
@@ -53,6 +54,8 @@ class WorldCamera(Camera):
          worldSize = vectorOffset(maxPosition, minPosition)
          viewScale = vectorScale(vectorInvert(worldSize), 600)
          scale = min(viewScale)
+
+         scale = scalarBound(0.02, scale, 1.0)
 
          self.scale.set(scale)
 

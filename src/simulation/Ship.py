@@ -20,7 +20,7 @@ nextShipId = 0
 SHIP_SIZE = 1200.0
 
 class Ship(Physics.RigidBody):
-   def __init__(self, name, design, autopilot, position, rotation, velocity, combatTeam):
+   def __init__(self, definition, position, rotation, velocity, combatTeam):
       Physics.RigidBody.__init__(self, position)
 
       global nextShipId
@@ -31,7 +31,7 @@ class Ship(Physics.RigidBody):
       self.jumpComplete = False
 
       self.ftlTime = 25
-      self.name = name
+      self.name = definition.name
       self.combatTeam = combatTeam
       self.exciting = True
       self.world = App.world
@@ -40,7 +40,6 @@ class Ship(Physics.RigidBody):
       self.availableDeflectorPower = 1000.0
       self.velocity = velocity
 
-      self.onDestroy += self.handleDestroyed
       self.damaged = False
       self.hasTakenDamage = False
 
@@ -51,7 +50,7 @@ class Ship(Physics.RigidBody):
 
       self.moduleOffset = (0, 0)
       
-      for moduleType, x, y in allModules(design):
+      for moduleType, x, y in allModules(definition.design):
          #x *= Misc.MODULE_SIZE
          #y *= Misc.MODULE_SIZE
          
@@ -60,7 +59,7 @@ class Ship(Physics.RigidBody):
       self.engines = [m for m in self.modules if isinstance(m, Modules.Engine)]
       self.weapons = [r for r in self.modules if isinstance(r, Modules.PlasmaCannon)]
 
-      self.installAutopilot(autopilot)
+      self.installAutopilot(definition.autopilot)
 
       random.shuffle(self.engines)
       random.shuffle(self.weapons)
@@ -79,11 +78,11 @@ class Ship(Physics.RigidBody):
          if vectorDistance(module.position, position) < Misc.MODULE_SIZE / 2:
             if module is self.flightComputer:
                return
-               
+
             elif module.installType == moduleType:
                return
 
-            self.explodeModule(module)
+            self.explodeModule(module, boom=False)
 
       x, y = position
       module = None
@@ -277,14 +276,7 @@ class Ship(Physics.RigidBody):
       
       #self.recalculateModules()
 
-   def handleDestroyed(self, sender):
-      self.world.addObject(Misc.Explosion(self.position, 
-                                          self.velocity, 
-                                          125 + (15 * len(self.modules))))
-      for module in self.modules:
-         self.explodeModule(module)
-                     
-   def explodeModule(self, module):
+   def explodeModule(self, module, boom=True):
       self.hasTakenDamage = True
       if not (module in self.modules):
          return
@@ -299,11 +291,21 @@ class Ship(Physics.RigidBody):
       if module in self.engines:
          self.engines.remove(module)
 
-      self.world.addObject(Misc.Explosion(module.absolutePosition(), self.velocity, 65))
+      if boom:
+         self.world.addObject(Misc.Explosion(module.absolutePosition(), self.velocity, 65))
 
    def collide(self):
       # Ships handle their own collisions
       return
+
+   def destroy(self):
+      self.world.addObject(Misc.Explosion(self.position, 
+                                          self.velocity, 
+                                          125 + (15 * len(self.modules))))
+      for module in self.modules:
+         self.explodeModule(module)
+
+      Physics.RigidBody.destroy(self)
 
 
 

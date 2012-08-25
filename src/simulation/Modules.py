@@ -4,6 +4,10 @@ import ShipControls
 import Misc
 import Ship
 import Timing
+import imp
+
+def loadAutopilot(autopilotName):
+   return imp.load_source(autopilotName, "./src/playerdata/autopilot/%s.py" % (autopilotName,)).Autopilot
 
 class Module:
    isDeflector = False
@@ -35,8 +39,11 @@ class FlightComputer(Module):
       self.createAutopilot = autopilot
 
    def installAutopilot(self, autopilot):
-      self.autopilot = None     
-      self.createAutopilot = autopilot
+      self.autopilot = None
+      self.createAutopilot = None
+
+      if autopilot != None:
+         self.createAutopilot = loadAutopilot(autopilot)
 
    def simulate(self):
       if self.createAutopilot == None:

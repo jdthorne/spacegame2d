@@ -28,7 +28,9 @@ class BulletRenderer(SimpleRenderer):
 
    def updateEffects(self, bullet):
       self.sprite.setScale(4.0)
-      self.sprite.setAlpha((1.0*bullet.life)/bullet.initialLife)
+
+      if bullet.life < 10.0:
+         self.sprite.setAlpha(bullet.life/10.0)
 
 class ExplosionRenderer(SimpleRenderer):
    def __init__(self, bullet):
@@ -36,4 +38,5 @@ class ExplosionRenderer(SimpleRenderer):
 
    def updateEffects(self, explosion):
       self.sprite.setScale((explosion.life**1.1) / 25.0)
-      self.sprite.setAlpha(float(explosion.life) / explosion.initialLife)
+
+      self.sprite.setAlpha(float(explosion.life) / explosion.initialLife)  
