@@ -7,14 +7,11 @@ def interceptVector(target):
    distance = vectorMagnitude(target.vector())
 
    interceptSpeed = Misc.BULLET_SPEED
-
    timeToIntercept = distance / interceptSpeed
 
    targetDisplacement = vectorScale(target.velocity(), timeToIntercept)
-   #HUD.displayVector(targetDisplacement, position=target.vector(), color="red")
 
    newPosition = vectorAdd(target.vector(), targetDisplacement)
-   #HUD.displayVector(newPosition, color="green")
    return newPosition
 
 def powerForSmoothApproach(distance, currentSpeed, maxPositiveAcceleration, maxNegativeAcceleration):
@@ -23,9 +20,6 @@ def powerForSmoothApproach(distance, currentSpeed, maxPositiveAcceleration, maxN
 
    if maxPositiveAcceleration == 0 or maxNegativeAcceleration == 0:
       return 0.0
-
-   #if distance < 0 and abs(distance) < abs(currentSpeed * 4.0):
-   #   return 0.0
 
    targetAcceleration = -(currentSpeed**2) / (2*distance)
    maxAppropriateAcceleration = maxNegativeAcceleration if distance < 0 else maxPositiveAcceleration

@@ -1,10 +1,10 @@
 #!/usr/bin/python
 
 
-class A:
+listOfPoints = [ (1, 2), 
+                 (3, 4), 
+                 (5, 6) ]
 
-
-a = A()
-a.x = "Hey"
-
+for x, y in listOfPoints:
+   print x
 

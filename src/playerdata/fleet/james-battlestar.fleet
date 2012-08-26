@@ -9,7 +9,7 @@
       {
          "count": 5, 
          "autopilot": "Standard", 
-         "design": "    <P       \n    <P       \n   <PDDP     \n   <PDDP>    \n   <PPPP>    \n  <DDPPDDD>  \n<PDDDDDPDPPP \n<DDDDDDCDDDD>\n<PDDDDDPDPPP \n  <DDPPDDD>  \n   <PPPP>    \n   <PDDP>    \n   <PDDP     \n    <P       \n    <P       \n", 
+         "design": "    <P       \n    <P       \n   <PDDP     \n   <PDDP>    \n   <PPPP>    \n  <SSPPDSD>  \n<PSDDDDPSPPP \n<DDDDDDCSDDD>\n<PSDDDDPSPPP \n  <SSPPDSD>  \n   <PPPP>    \n   <PDDP>    \n   <PDDP     \n    <P       \n    <P       \n", 
          "name": "Buddy"
       }
    ], 
