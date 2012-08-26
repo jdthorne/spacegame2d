@@ -12,6 +12,7 @@ import MiscRender
 class ShipRenderer:
    def __init__(self, ship):
       self.ship = ship
+      self.engineSprites = {}
 
       ship.onUpdate += self.handleUpdate
       ship.onDestroy += self.handleDestroy
@@ -26,6 +27,7 @@ class ShipRenderer:
       self.generateSprite()
 
    def handleUpdate(self, ship):
+      self.updateEngines(ship)
       self.sprite.setPosition(ship.position)
       self.sprite.setRotation(ship.rotation)
 
@@ -44,7 +46,7 @@ class ShipRenderer:
       ship.onUpdate -= self.handleUpdate
       ship.onDestroy -= self.handleDestroy
 
-      self.sprite.destroy()
+      self.cleanSprites()
       self.deflectorSprite.destroy()
 
       if self.ftlSprite != None:
@@ -53,13 +55,20 @@ class ShipRenderer:
 
       self.wasDestroyed = True
 
+   def cleanSprites(self):
+      if self.sprite != None:
+         self.sprite.destroy()
+
+      for engine in self.engineSprites.copy():
+         self.engineSprites[engine].destroy()
+         del self.engineSprites[engine]
+
    def handleLayoutChanged(self, ship):
       if not self.wasDestroyed:
          self.generateSprite()
 
    def generateSprite(self):
-      if self.sprite != None:
-         self.sprite.destroy()
+      self.cleanSprites()
 
       size = (768, 768)
 
@@ -124,6 +133,37 @@ class ShipRenderer:
 
       self.sprite = Sprite.Sprite(image, camera=App.worldCamera)
       self.handleUpdate(self.ship)
+
+   def updateEngines(self, ship):
+      for engine in ship.engines:
+         if not (engine in self.engineSprites):
+            self.engineSprites[engine] = Sprite.Sprite("exhaust", camera=App.worldCamera, layer=Sprite.exhaustLayer)
+
+         sprite = self.engineSprites[engine]
+
+         rotation = engine.parent.rotation + vectorDirection(engine.thrustVector) - math.pi
+
+         if engine.power > 0.01:
+            engine.onTime += 1
+         else:
+            engine.onTime -= 1
+
+         engine.onTime = scalarBound(0, engine.onTime, 20)
+
+         onPower = engine.onTime / 20.0
+         if onPower > 0.05:
+            exhaustDirection = vectorRotate(vectorScale(engine.thrustVector, -1), engine.parent.rotation)
+            exhaustPoint = vectorScale(vectorNormalize(exhaustDirection), Misc.MODULE_SIZE / 1.5)
+            exhaustPoint = vectorAdd(engine.absolutePosition(), exhaustPoint)
+         
+            rotation = engine.parent.rotation + vectorDirection(engine.thrustVector) + (math.pi/2)
+
+            sprite.setPosition(exhaustPoint)
+            sprite.setRotation(rotation)
+            sprite.setAlpha(onPower)
+         else:
+            sprite.hide()
+
 
 # ======================= STRUCTURAL/CACHING STUFF =========================
 

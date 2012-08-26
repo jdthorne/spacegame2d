@@ -20,6 +20,9 @@ class Module:
    def __eq__(self, rhs):
       return self is rhs
 
+   def __hash__(self):
+      return id(self)
+
    def absolutePosition(self):
       relativePosition = vectorRotate(self.position, self.parent.rotation)
       return vectorAdd(relativePosition, self.parent.position)      

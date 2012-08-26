@@ -126,6 +126,8 @@ class FleetDesigner:
       App.worldCamera.focus = ship
       App.worldCamera.focusScale = 1.0
 
+      self.autopilotPanel.display(item.shipDef.autopilot)
+
       self.handleToolSelected()
 
    # ==================== TOOL SELECTION =========================

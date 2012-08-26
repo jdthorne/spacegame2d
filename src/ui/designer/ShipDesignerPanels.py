@@ -48,7 +48,16 @@ class StructuralPanel(Sidebar.Panel):
 
 class AutopilotPanel(Sidebar.Panel):
    def __init__(self):
-      Sidebar.Panel.__init__(self, "Autopilot Selection", "0")
+      Sidebar.Panel.__init__(self, "Flight Computer", "0")
+
+      self.select = Sidebar.Item("Autopilot", right="...")
+      self.items.append(self.select)
+
+      self.edit = Sidebar.Item("Edit Autopilot Source", right="->")
+      self.items.append(self.edit)
+
+   def display(self, text):
+      self.select.statusText.setText(text)
 
 class TestingPanel(Sidebar.Panel):
    def __init__(self):
@@ -57,7 +66,7 @@ class TestingPanel(Sidebar.Panel):
       self.environment = Sidebar.Item("Scenario", "crates", right="...")
       self.items.append(self.environment)
 
-      self.launch = Sidebar.Item("Enter Test Environment", right="=>")
+      self.launch = Sidebar.Item("Enter Test Environment", right="->")
       self.items.append(self.launch)
 
    def isLaunchRequested(self):

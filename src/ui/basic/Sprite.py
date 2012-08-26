@@ -31,6 +31,7 @@ shipLayer = nextLayer()
 gridLayer = nextLayer()
 effectLayer = nextLayer()
 toolLayer = nextLayer()
+exhaustLayer = nextLayer()
 
 sidebarBaseLayer = nextLayer()
 sidebarPanelLayer = nextLayer()
