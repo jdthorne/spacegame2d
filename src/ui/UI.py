@@ -28,6 +28,7 @@ class UI:
       window.on_mouse_motion = self.handleMouseMotion
       window.on_mouse_press = self.handleMouseDown
       window.on_mouse_drag = self.handleMouseDrag
+      window.on_mouse_scroll = self.handleMouseScroll
       self.window = window
 
       self.background = Sprite.Sprite("background", position=(0, 0))
@@ -83,3 +84,6 @@ class UI:
    def handleMouseDrag(self, x, y, dx, dy, button, modifier):
       self.handleMouseMotion(x, y, dx, dy)
       self.handleMouseDown(x, y, button, modifier)
+
+   def handleMouseScroll(self, x, y, scroll_x, scroll_y):
+      App.worldCamera.handleZoom(scroll_y)

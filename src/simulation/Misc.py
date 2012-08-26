@@ -47,7 +47,7 @@ class Bullet(Physics.PointBody):
       self.life = self.initialLife
       
    def mass(self):
-      return 1.0
+      return 15.0
       
    def simulate(self):
       self.life -= 1

@@ -21,9 +21,14 @@ class BasicCombatTeam:
       nextTeamId += 1
 
       App.world.onUpdate += self.handleWorldUpdate
+      App.world.onCombatTeamRemoved += self.handleTeamRemoved
 
    def __eq__(self, rhs):
       return self is rhs
+
+   def handleTeamRemoved(self, world, team):
+      if team is self:
+         self.destroy()
 
    def destroy(self):
       App.world.onUpdate -= self.handleWorldUpdate

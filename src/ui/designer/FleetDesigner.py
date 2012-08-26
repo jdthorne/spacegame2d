@@ -103,7 +103,10 @@ class FleetDesigner:
 
    # ==================== SHIP SELECTION =========================
    def handleShipSelected(self, sidebar, item):
-      if item == None:
+      if item == None or (not "shipDef" in item.__dict__):
+         self.currentShip = None
+         self.currentShipDef = None
+
          App.ui.left.deselectAll()
          App.ui.left.hide()
          App.worldCamera.focus = None
@@ -121,6 +124,7 @@ class FleetDesigner:
       self.currentShip = ship
       App.ui.left.show()
       App.worldCamera.focus = ship
+      App.worldCamera.focusScale = 1.0
 
       self.handleToolSelected()
 

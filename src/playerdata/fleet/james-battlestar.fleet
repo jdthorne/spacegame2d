@@ -3,13 +3,13 @@
       {
          "count": 1, 
          "autopilot": "Spinpilot", 
-         "design": "    DDDDP  \n    PPPPP  \n    < <PP  \n    < <PP  \n    < <PP  \n    PPPPP  \n DDPDPDPDD \nDPDPDDDPDPD\nPPDPDCDPDPP\nDPDPDDDPDPD\n DDPDPDPDD \n  PPPPP    \n  PP> >    \n  PP> >    \n  PP> >    \n  PPPPP    \n  PDDDD    \n", 
+         "design": "    DDDDP  \n    PPPPP  \n    < <PP  \n    < <PP  \n    < <PP  \n    PPPPP  \n DDPDPDPDDP\nDPDPDDDPDPD\nPPDPDCDPDPP\nDPDPDDDPDPD\n DDPDPDPDDP\n  PPPPP    \n  PP> >    \n  PP> >    \n  PP> >    \n  PPPPP    \n  PDDDD    \n", 
          "name": "Ong-Mar"
       }, 
       {
          "count": 5, 
          "autopilot": "Standard", 
-         "design": "    <P       \n    <P       \n   <PDDP     \n   <PDDP>    \n   <PPPP>    \n  <SSPPDSD>  \n<PSDDDDPSPPP \n<DDDDDDCSDDD>\n<PSDDDDPSPPP \n  <SSPPDSD>  \n   <PPPP>    \n   <PDDP>    \n   <PDDP     \n    <P       \n    <P       \n", 
+         "design": "    <P       \n    <P       \n   <PDDP     \n   <PDDP>    \n   <PPPP>    \n  <SDPPDSD>  \n<PPSDDDPSPPP \n<DDSDDDCSDDD>\n<PPSDDDPSPPP \n  <SDPPDSD>  \n   <PPPP>    \n   <PDDP>    \n   <PDDP     \n    <P       \n    <P       \n", 
          "name": "Buddy"
       }
    ], 

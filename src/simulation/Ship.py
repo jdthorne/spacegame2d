@@ -66,6 +66,7 @@ class Ship(Physics.RigidBody):
       
       self.moduleOffset = (0, 0)
       self.recalculateModules()
+      self.simulateDamage()
 
    def installAutopilot(self, autopilot):
       self.flightComputer.installAutopilot(autopilot)
@@ -239,7 +240,7 @@ class Ship(Physics.RigidBody):
       mix = power * 2
       item.velocity = vectorAdd(vectorScale(item.velocity, 1.0-mix), vectorScale(self.velocity, mix))
 
-      self.availableDeflectorPower -= (power * delta * 0.002)
+      self.availableDeflectorPower -= (power * delta * 0.002 * (item.mass()/15.0)**2)
 
    def simulateCollisions(self, item):
       radius = (2.0 * vectorMagnitude(item.velocity))

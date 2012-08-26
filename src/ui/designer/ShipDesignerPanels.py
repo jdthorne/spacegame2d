@@ -57,7 +57,7 @@ class TestingPanel(Sidebar.Panel):
       self.environment = Sidebar.Item("Scenario", "crates", right="...")
       self.items.append(self.environment)
 
-      self.launch = Sidebar.Item("Launch", right=">")
+      self.launch = Sidebar.Item("Enter Test Environment", right="=>")
       self.items.append(self.launch)
 
    def isLaunchRequested(self):

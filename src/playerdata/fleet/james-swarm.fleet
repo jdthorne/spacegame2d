@@ -4,7 +4,7 @@
     { 
       "name": "Swarmer",
       "count": 15,
-      "autopilot": "Standard",
+      "autopilot": "Divebomb",
       "design": " <PP>\n<PCPDP>\n <PP>"
     }
   ]

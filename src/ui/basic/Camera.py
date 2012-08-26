@@ -44,6 +44,8 @@ class WorldCamera(Camera):
 
    def handleWorldUpdate(self, world):
       if self.focus != None:
+         self.focusScale = scalarBound(0.01, self.focusScale, 2.0)
+
          self.position.set(vectorScale(self.focus.position, -1))
          self.scale.set(self.focusScale)
 
@@ -63,3 +65,6 @@ class WorldCamera(Camera):
          center = vectorAdd(minPosition, vectorScale(worldSize, 0.5))
          self.position.set(vectorScale(center, -1))
 
+   def handleZoom(self, dy):
+      delta = (dy / 50.0)
+      self.focusScale *= (1.0 + delta)
